@@ -1,0 +1,1187 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Вечный Горизонт</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Вечный Горизонт — пиксельная метроидвания о спуске к чёрной дыре.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@400;500&family=Pixelify+Sans:wght@400;600;700&display=swap">
+<style>
+/* Layout: монохромная космическая тьма. Полноэкранный пиксельный горизонт событий, дальше — спуск сверху вниз, как падение в Око. */
+:root{
+  --void:#050505; --abyss:#0c0c0d; --ash:#1f1f21; --smoke:#7a7772; --mist:#a8a49c; --bone:#ece8e1;
+  --ember:#f2d9a0; --ember-dim:rgba(242,217,160,.14); --blood:#d0645a;
+  --glow:0 0 40px rgba(236,232,225,.16);
+  --f-pixel:"Pixelify Sans", "Courier New", monospace;
+  --f-lore:"Cormorant Garamond", "Times New Roman", Georgia, serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --wrap:1200px; --text:680px;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;background:var(--void)}
+body{margin:0;background:var(--void);color:var(--bone);font-family:var(--f-lore);font-size:20px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--void)}
+::selection{background:var(--ember);color:var(--void)}
+a{color:var(--bone);text-decoration:underline dotted 1px;text-underline-offset:4px}
+a:hover{color:var(--ember)}
+:focus-visible{outline:2px solid var(--ember);outline-offset:4px}
+canvas.px{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+.wrap{max-width:var(--wrap);margin-inline:auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.eyebrow{font-family:var(--f-mono);font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--mist)}
+h1,h2,h3{font-family:var(--f-pixel);font-weight:600;line-height:1.02;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:clamp(40px,6vw,64px)}
+h3{font-size:28px}
+p{margin:0}
+.ph{font-family:var(--f-mono);font-size:13px;color:var(--mist);border:1px dashed var(--smoke);padding:2px 8px;white-space:nowrap}
+
+/* кнопки: пиксельные углы через box-shadow */
+.btn{--c:var(--bone);display:inline-flex;align-items:center;gap:10px;font-family:var(--f-pixel);font-size:18px;font-weight:600;letter-spacing:.02em;padding:12px 22px;margin:2px;text-decoration:none;cursor:pointer;border:0;transition:box-shadow .2s,transform .1s,color .2s,background .2s}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--bone);color:var(--void);box-shadow:0 -2px 0 0 var(--bone),0 2px 0 0 var(--bone),-2px 0 0 0 var(--bone),2px 0 0 0 var(--bone)}
+.btn-primary:hover{color:var(--void);box-shadow:0 -2px 0 0 var(--bone),0 2px 0 0 var(--bone),-2px 0 0 0 var(--bone),2px 0 0 0 var(--bone),0 0 36px 4px rgba(236,232,225,.35)}
+.btn-ghost{background:transparent;color:var(--bone);box-shadow:inset 0 0 0 2px var(--bone)}
+.btn-ghost:hover{color:var(--void);background:var(--bone)}
+.btn[aria-disabled="true"]{opacity:.55;cursor:not-allowed}
+.btn svg{width:16px;height:16px;shape-rendering:crispEdges}
+
+/* навигация */
+.nav{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:50;transition:background .3s,border-color .3s;border-bottom:1px solid transparent}
+.nav.scrolled{background:rgba(5,5,5,.92);border-color:var(--ash);backdrop-filter:blur(6px)}
+.nav-in{display:flex;align-items:center;gap:32px;height:64px}
+.logo{white-space:nowrap;display:flex;align-items:center;gap:10px;font-family:var(--f-pixel);font-size:20px;font-weight:700;text-decoration:none;color:var(--bone)}
+.logo canvas{width:22px;height:22px}
+.nav ul{display:flex;gap:24px;list-style:none;margin:0 0 0 auto;padding:0}
+.nav ul a{font-family:var(--f-mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;color:var(--mist)}
+.nav ul a:hover{color:var(--bone)}
+.depth{font-family:var(--f-mono);font-size:13px;color:var(--ember);font-variant-numeric:tabular-nums;min-width:118px;text-align:right}
+@media (max-width:860px){.nav ul{display:none}.depth{margin-left:auto}}
+
+/* hero */
+.hero{position:relative;min-height:clamp(640px,96vh,940px);display:flex;align-items:flex-end;overflow:hidden;isolation:isolate}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;z-index:-2}
+.hero::after{content:"";position:absolute;inset:auto 0 0;height:30%;background:linear-gradient(transparent,var(--void));z-index:-1;pointer-events:none}
+.hero-in{width:100%;display:grid;grid-template-columns:1fr minmax(0,560px);padding-block:120px 72px}
+.hero-copy{grid-column:2;display:grid;gap:24px;position:relative}
+.hero-copy::before{content:"";position:absolute;inset:-80px -120px -60px -100px;background:radial-gradient(closest-side,rgba(5,5,5,.82),rgba(5,5,5,.55) 60%,transparent);z-index:-1;pointer-events:none}
+.hero h1{font-size:clamp(64px,9.4vw,124px);font-weight:700;line-height:.9;text-shadow:0 0 50px rgba(5,5,5,.9)}
+.hero h1 span{display:block;color:var(--mist)}
+.hero .lead{font-size:24px;line-height:1.45;max-width:34ch;color:var(--bone);text-shadow:0 1px 18px var(--void)}
+.cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.meta-row{display:flex;flex-wrap:wrap;gap:10px 22px;font-family:var(--f-mono);font-size:13px;color:var(--mist);align-items:center}
+@media (max-width:860px){
+  .hero{align-items:flex-end}
+  .hero-in{grid-template-columns:1fr;padding-block:52vh 48px}
+  .hero-copy{grid-column:1}
+  .hero .lead{font-size:21px}
+}
+
+section{position:relative;padding-block:160px 0}
+@media (max-width:700px){section{padding-block:96px 0}}
+.sec-head{display:grid;gap:18px;margin-bottom:56px;max-width:760px}
+.sec-head p.sub{font-size:22px;color:var(--mist);max-width:56ch}
+
+/* пролог */
+.prologue{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:64px;align-items:start}
+.chapters{list-style:none;margin:0;padding:0;display:grid;gap:0;border-top:1px solid var(--ash);position:sticky;top:96px}
+.chapters li{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:20px 0;border-bottom:1px solid var(--ash)}
+.chapters .n{font-family:var(--f-pixel);font-size:22px;color:var(--ember)}
+.chapters b{font-family:var(--f-pixel);font-weight:600;font-size:20px;display:block;line-height:1.2;margin-bottom:6px}
+.chapters span.t{font-size:18px;color:var(--mist);line-height:1.4}
+.lore{max-width:var(--text);display:grid;gap:28px;font-size:23px;line-height:1.6}
+.lore p:first-child::first-letter{font-family:var(--f-pixel);font-weight:700;float:left;font-size:96px;line-height:.8;padding:8px 14px 0 0;color:var(--ember)}
+.lore blockquote{margin:12px 0;padding:8px 0 8px 28px;border-left:2px solid var(--ember);font-style:italic;font-size:28px;line-height:1.4;color:var(--bone)}
+.lore blockquote cite{display:block;margin-top:10px;font-family:var(--f-mono);font-style:normal;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mist)}
+.lore .muted{color:var(--mist)}
+@media (max-width:860px){.prologue{grid-template-columns:1fr;gap:40px}.chapters{position:static}.lore{font-size:21px}}
+
+/* уровни */
+.levels{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:40px}
+.tabs{display:flex;flex-direction:column;border-left:1px solid var(--ash)}
+.tab{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:baseline;padding:16px 18px;position:relative;color:var(--mist);transition:color .2s,background .2s}
+.tab::before{content:"";position:absolute;left:-1px;top:0;bottom:0;width:2px;background:transparent;transition:background .2s}
+.tab:hover{color:var(--bone);background:rgba(236,232,225,.03)}
+.tab[aria-selected="true"]{color:var(--bone);background:rgba(236,232,225,.05)}
+.tab[aria-selected="true"]::before{background:var(--ember)}
+.tab:focus-visible{outline:2px solid var(--ember);outline-offset:-2px}
+.tab .d{font-family:var(--f-mono);font-size:12px;color:var(--smoke);grid-column:1/-1;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.tab[aria-selected="true"] .d{color:var(--ember)}
+.tab .nm{font-family:var(--f-pixel);font-size:21px;font-weight:600;grid-column:1/-1;line-height:1.15}
+.panel{display:grid;gap:28px;min-width:0}
+.scene{position:relative;border:1px solid var(--ash);background:var(--void);aspect-ratio:16/9;max-width:100%}
+.scene canvas{width:100%;height:100%}
+.scene .tag{position:absolute;left:16px;top:14px;font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone);background:rgba(5,5,5,.7);padding:4px 8px}
+.panel h3{font-size:clamp(30px,3.6vw,44px)}
+.panel .desc{font-size:22px;max-width:60ch;color:var(--bone)}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--ash)}
+.facts div{padding:18px 18px 0 0;display:grid;gap:6px;align-content:start}
+.facts div+div{padding-left:18px;border-left:1px solid var(--ash)}
+.facts dt{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke)}
+.facts dd{margin:0;font-size:19px;line-height:1.4}
+.facts dd.boss{color:var(--blood)}
+@media (max-width:900px){
+  .levels{grid-template-columns:1fr}
+  .tabs{flex-direction:row;overflow-x:auto;border-left:0;border-bottom:1px solid var(--ash);scrollbar-width:none}
+  .tab{min-width:180px}
+  .tab::before{left:0;right:0;top:auto;bottom:-1px;width:auto;height:2px}
+  .facts{grid-template-columns:1fr}
+  .facts div+div{padding-left:0;border-left:0;border-top:1px solid var(--ash);padding-top:14px}
+  .facts div{padding-bottom:14px}
+}
+
+/* демо */
+.demo-grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:32px;align-items:start}
+.game{position:relative;aspect-ratio:16/9;max-width:100%;background:var(--void);border:1px solid var(--ash);box-shadow:0 0 0 6px var(--void),0 0 0 7px var(--ash),0 30px 80px rgba(0,0,0,.6);outline:none;user-select:none;-webkit-user-select:none;touch-action:none}
+.game:focus-visible{box-shadow:0 0 0 6px var(--void),0 0 0 8px var(--ember)}
+.game canvas{width:100%;height:100%}
+.hud{position:absolute;inset:0;pointer-events:none;padding:14px 16px;display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--f-pixel)}
+.masks{display:flex;gap:6px}
+.masks i{width:14px;height:18px;display:block;background:var(--ember);clip-path:polygon(30% 0,70% 0,70% 15%,100% 15%,100% 85%,70% 85%,70% 100%,30% 100%,30% 85%,0 85%,0 15%,30% 15%);box-shadow:0 0 12px var(--ember)}
+.masks i.off{background:var(--ash)}
+.shards{font-size:18px;color:var(--bone);display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+.shards::before{content:"";width:8px;height:12px;background:var(--bone);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.hint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);font-family:var(--f-pixel);font-size:16px;color:var(--bone);background:rgba(5,5,5,.75);padding:6px 12px;white-space:nowrap;pointer-events:none;transition:opacity .3s;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
+.hint:empty{opacity:0}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:18px;text-align:center;background:rgba(5,5,5,.78);padding:24px}
+.overlay h3{font-size:clamp(26px,4vw,40px)}
+.overlay p{font-size:19px;color:var(--mist);max-width:40ch}
+.touch{position:absolute;inset:auto 0 0;display:none;justify-content:space-between;padding:10px;pointer-events:none}
+.touch .grp{display:flex;gap:8px;pointer-events:auto}
+.touch button{all:unset;width:46px;height:46px;display:grid;place-items:center;background:rgba(236,232,225,.1);box-shadow:inset 0 0 0 2px rgba(236,232,225,.35);font-family:var(--f-pixel);font-size:14px;color:var(--bone);touch-action:none}
+.touch button.on{background:rgba(242,217,160,.35)}
+@media (pointer:coarse){.game.playing .touch{display:flex}.game.playing .hint{bottom:auto;top:44px}}
+.controls{display:grid;gap:0;border-top:1px solid var(--ash)}
+.controls div{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--ash);font-size:19px}
+.controls kbd{font-family:var(--f-mono);font-size:12px;color:var(--bone);padding:3px 7px;box-shadow:inset 0 0 0 1px var(--smoke);white-space:nowrap}
+.demo-note{font-size:18px;color:var(--mist);margin-top:18px}
+@media (max-width:980px){.demo-grid{grid-template-columns:1fr}}
+
+/* хранитель */
+.keeper{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:64px;align-items:center}
+.portrait{position:relative;display:grid;place-items:center;aspect-ratio:4/5;max-width:100%;border:1px solid var(--ash);background:radial-gradient(circle at 62% 58%,var(--ember-dim),transparent 45%),var(--abyss)}
+.portrait canvas{width:52%;height:auto}
+.portrait .cap{position:absolute;left:18px;bottom:16px;right:18px;display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mist)}
+.abilities{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border-top:1px solid var(--ash);margin-top:40px}
+.ab{display:grid;grid-template-columns:44px 1fr;gap:16px;padding:24px 20px 24px 0;border-bottom:1px solid var(--ash)}
+.ab:nth-child(even){padding-left:20px;border-left:1px solid var(--ash)}
+.ab canvas{width:36px;height:36px;margin-top:4px}
+.ab b{font-family:var(--f-pixel);font-size:21px;font-weight:600;display:block;margin-bottom:6px}
+.ab p{font-size:18px;color:var(--mist);line-height:1.45}
+@media (max-width:900px){.keeper{grid-template-columns:1fr;gap:40px}.portrait{max-width:420px}}
+@media (max-width:600px){.abilities{grid-template-columns:1fr}.ab:nth-child(even){padding-left:0;border-left:0}}
+
+/* бестиарий */
+.beasts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;background:var(--ash);border:2px solid var(--ash)}
+.beast{background:var(--void);padding:28px 24px 30px;display:grid;gap:14px;align-content:start;transition:background .25s}
+.beast:hover{background:var(--abyss)}
+.beast .art{height:150px;display:grid;place-items:center}
+.beast canvas{width:128px;height:auto}
+.beast .kind{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);display:flex;justify-content:space-between;gap:8px}
+.beast .kind .boss{color:var(--blood)}
+.beast h3{font-size:24px}
+.beast p{font-size:18px;color:var(--mist);line-height:1.45}
+@media (max-width:1000px){.beasts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.beasts{grid-template-columns:1fr}}
+
+/* финал */
+.final{padding-block:180px 140px;text-align:left}
+.final-in{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:48px;align-items:end;border-top:1px solid var(--ash);padding-top:64px}
+.final h2{font-size:clamp(48px,8vw,104px);line-height:.92}
+.final p{font-size:22px;color:var(--mist);max-width:46ch;margin-top:24px}
+.final .cta-row{justify-content:flex-end}
+@media (max-width:860px){.final-in{grid-template-columns:1fr}.final .cta-row{justify-content:flex-start}}
+footer{border-top:1px solid var(--ash);padding-block:32px}
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;font-family:var(--f-mono);font-size:13px;color:var(--smoke)}
+
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav" aria-label="Основная навигация">
+  <div class="wrap nav-in">
+    <a class="logo" href="#top"><canvas class="px" id="logoMark" width="11" height="11" aria-hidden="true"></canvas><span class="game-name">Вечный Горизонт</span></a>
+    <ul>
+      <li><a href="#prologue">Сюжет</a></li>
+      <li><a href="#levels">Уровни</a></li>
+      <li><a href="#demo">Демо</a></li>
+      <li><a href="#keeper">Герой</a></li>
+      <li><a href="#bestiary">Бестиарий</a></li>
+    </ul>
+    <span class="depth" id="depth" aria-label="Глубина спуска">−0 м</span>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <canvas class="px" id="bh" aria-hidden="true"></canvas>
+  <div class="wrap hero-in">
+    <div class="hero-copy">
+      <p class="eyebrow">Пиксельная метроидвания · в разработке</p>
+      <h1 class="game-title">Вечный<span>Горизонт</span></h1>
+      <p class="lead">Королевство Ольм падает в чёрную дыру. У тебя есть фонарь с последней искрой, игла и пять кругов спуска до горизонта событий.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#demo"><svg viewBox="0 0 8 8" aria-hidden="true"><path d="M1 0h2v1h1v1h1v1h1v2h-1v1h-1v1h-1v1h-2z" fill="currentColor"/></svg>Сыграть в демо</a>
+        <a class="btn btn-ghost" href="#prologue">Читать пролог</a>
+      </div>
+      <div class="meta-row">
+        <span>Выход: <span class="ph">[дата — заглушка]</span></span>
+        <span>Платформы: <span class="ph">[список — заглушка]</span></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+<section id="prologue" aria-labelledby="prologue-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Глубина 0 м · Пролог</p>
+      <h2 id="prologue-h">Солнце не погасло. Оно стало дырой.</h2>
+    </div>
+    <div class="prologue">
+      <ol class="chapters" aria-label="Главы сюжета">
+        <li><span class="n">I</span><div><b>Последняя искра</b><span class="t">Фитиль просыпается в пустой часовне Хранителей. Все фонари вокруг выпиты.</span></div></li>
+        <li><span class="n">II</span><div><b>Пять кругов</b><span class="t">Путь вниз ведёт через пять зон Ольма. Каждая ближе к Оку, и время в ней течёт медленнее.</span></div></li>
+        <li><span class="n">III</span><div><b>Тот, кто пьёт свет</b><span class="t">На горизонте событий ждёт тот, кто гасит фонари. Финал зависит от того, сколько света вы донесёте.</span></div></li>
+      </ol>
+      <div class="lore">
+        <p>Когда-то над королевством Ольм светило солнце. Потом оно погасло, но не исчезло, а превратилось в дыру в небе. Жители назвали её Немым Оком. Око ничего не освещает. Оно только смотрит и тянет к себе.</p>
+        <p>Год за годом Ольм сползает к его краю: сначала крыши, потом улицы, потом память о них. Свет стал единственной валютой и единственной молитвой. Его хранили в фонарях, пока фонари не начали гаснуть сами, будто кто-то пил их изнутри.</p>
+        <blockquote>«Не смотри вверх, Фитиль. Смотри под ноги. Вверху теперь только низ».<cite>Старый Фонарщик, Пепельные Окраины</cite></blockquote>
+        <p>Ты Фитиль, последний из Хранителей. В твоём фонаре осталась одна искра. Её хватит, чтобы спуститься к горизонту. Хватит ли её, чтобы вернуться, не знает никто.</p>
+        <p class="muted">Чем ниже вы спускаетесь, тем медленнее течёт время. Минута у края Ока равна году наверху, и каждый уровень помнит Ольм в другую эпоху.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="levels" aria-labelledby="levels-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Карта спуска</p>
+      <h2 id="levels-h">Пять кругов до горизонта</h2>
+      <p class="sub">Каждая зона — отдельный мир со своими врагами, боссом и способностью, без которой не пройти дальше.</p>
+    </div>
+    <div class="levels">
+      <div class="tabs" role="tablist" aria-label="Уровни" aria-orientation="vertical" id="tabs"></div>
+      <div class="panel" role="tabpanel" id="panel" tabindex="0">
+        <div class="scene"><canvas class="px" id="scene" width="240" height="135" aria-hidden="true"></canvas><span class="tag" id="sceneTag"></span></div>
+        <h3 id="lvName"></h3>
+        <p class="desc" id="lvDesc"></p>
+        <dl class="facts">
+          <div><dt>Враги</dt><dd id="lvEnemies"></dd></div>
+          <div><dt>Босс</dt><dd class="boss" id="lvBoss"></dd></div>
+          <div><dt>Способность</dt><dd id="lvAbility"></dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="demo" aria-labelledby="demo-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Играбельно · Пепельные Окраины</p>
+      <h2 id="demo-h">Демо: первый спуск</h2>
+      <p class="sub">Пройдите окраины до первого горизонта. Соберите осколки света, зажгите фонари-сохранения и не попадитесь ползунам.</p>
+    </div>
+    <div class="demo-grid">
+      <div>
+        <div class="game" id="game" tabindex="0" aria-label="Игровое демо. Нажмите, чтобы играть.">
+          <canvas class="px" id="gc" width="320" height="180"></canvas>
+          <div class="hud" aria-hidden="true"><div class="masks" id="masks"></div><div class="shards" id="shards">0/0</div></div>
+          <div class="hint" id="hint" aria-live="polite"></div>
+          <div class="touch" aria-hidden="true">
+            <div class="grp"><button data-k="left">◀</button><button data-k="right">▶</button><button data-k="up">▲</button><button data-k="down">▼</button></div>
+            <div class="grp"><button data-k="dash">Р</button><button data-k="atk">У</button><button data-k="jump">П</button></div>
+          </div>
+          <div class="overlay" id="ov">
+            <h3 id="ovTitle">Пепельные Окраины</h3>
+            <p id="ovText">Демо-уровень. Около трёх минут спуска.</p>
+            <button class="btn btn-primary" id="ovBtn" type="button">Начать спуск</button>
+          </div>
+        </div>
+        <p class="demo-note">Клавиши работают, пока игра в фокусе. Esc — пауза.</p>
+      </div>
+      <div class="controls" aria-label="Управление">
+        <div><span>Движение</span><kbd>← →</kbd></div>
+        <div><span>Прыжок, двойной прыжок</span><kbd>Пробел / Z</kbd></div>
+        <div><span>Удар иглой</span><kbd>X / J</kbd></div>
+        <div><span>Удар вверх / вниз</span><kbd>↑ / ↓ + удар</kbd></div>
+        <div><span>Рывок</span><kbd>Shift / C</kbd></div>
+        <div><span>Пауза</span><kbd>Esc</kbd></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="keeper" aria-labelledby="keeper-h">
+  <div class="wrap keeper">
+    <div class="portrait"><canvas class="px" id="portrait" width="8" height="12" aria-hidden="true"></canvas><div class="cap"><span>Хранитель Фитиль</span><span>8 × 12 px</span></div></div>
+    <div>
+      <div class="sec-head" style="margin-bottom:0">
+        <p class="eyebrow">Герой</p>
+        <h2 id="keeper-h">Последний Хранитель</h2>
+        <p class="sub">Маленький, лёгкий и упрямый. Фитиль не умеет летать и не носит брони. Всё, что у него есть, — игла, фонарь и способности, найденные по дороге вниз.</p>
+      </div>
+      <div class="abilities" id="abilities"></div>
+    </div>
+  </div>
+</section>
+
+<section id="bestiary" aria-labelledby="best-h">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Бестиарий · записи Хранителей</p>
+      <h2 id="best-h">Кто живёт у края</h2>
+    </div>
+    <div class="beasts" id="beasts"></div>
+  </div>
+</section>
+
+<section class="final" aria-labelledby="final-h">
+  <div class="wrap">
+    <div class="final-in">
+      <div>
+        <p class="eyebrow">Глубина ∞</p>
+        <h2 id="final-h">Око ждёт.</h2>
+        <p>Демо уже работает на этой странице. В полной игре будут пять зон, четыре способности и финал, который зависит от того, сколько света вы сохраните.</p>
+      </div>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#demo">Сыграть в демо</a>
+        <span class="btn btn-ghost" aria-disabled="true" title="Ссылка появится позже">В желаемое <span class="ph" style="border-color:currentColor">[ссылка]</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot"><span><span class="game-name">Вечный Горизонт</span> · пиксельная метроидвания</span><span>© 2026 <span class="ph">[студия — заглушка]</span></span></div>
+</footer>
+
+<script>
+(() => {
+"use strict";
+/* ---------- общее ---------- */
+const GAME_NAME = "Вечный Горизонт";
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const BAYER = [0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v => (v + .5) / 16);
+const GRAYS = [[5,5,5],[17,17,18],[36,35,34],[64,62,59],[112,109,104],[176,172,164],[236,232,225]];
+const EMBER = [242,217,160];
+function hash2(i, j){ let h = (Math.imul(i, 374761393) + Math.imul(j, 668265263)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16; return (h >>> 0) / 4294967296; }
+function vnoise(x, y){
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf*xf*(3-2*xf), v = yf*yf*(3-2*yf);
+  const a = hash2(xi, yi), b = hash2(xi+1, yi), c = hash2(xi, yi+1), d = hash2(xi+1, yi+1);
+  return a + (b-a)*u + (c-a)*v + (a-b-c+d)*u*v;
+}
+function shade(data, i, x, y, v, pal = GRAYS){
+  if (v === 2){ data[i]=EMBER[0]; data[i+1]=EMBER[1]; data[i+2]=EMBER[2]; data[i+3]=255; return; }
+  const n = pal.length - 1, q = Math.max(0, Math.min(1, v)) * n;
+  let b = Math.floor(q); if (q - b > BAYER[(y & 3) * 4 + (x & 3)]) b++;
+  const c = pal[Math.min(n, b)];
+  data[i]=c[0]; data[i+1]=c[1]; data[i+2]=c[2]; data[i+3]=255;
+}
+
+/* Чёрная дыра: x,y в радиусах тени относительно центра */
+const TILT = 0.32, CA = Math.cos(TILT), SA = Math.sin(TILT);
+function bhIntensity(x, y, t){
+  const r = Math.hypot(x, y);
+  let I = 0;
+  if (r > 0.985){
+    const th = Math.atan2(y, x);
+    const dop = 0.5 + 0.5 * Math.cos(th - 0.55);
+    const streak = 0.72 + 0.28 * Math.sin(r * 34 - t * 0.7 + 4 * vnoise(th * 2.5 + t * 0.08, r * 3));
+    I += (Math.exp(-(((r - 1.1) / 0.07) ** 2)) * 1.7 + Math.exp(-(((r - 1.2) / 0.38) ** 2)) * 0.75) * (0.35 + dop) * streak;
+    I += 0.22 * Math.exp(-(r - 1) / 1.4) + 0.05;
+    I *= Math.min(1, (r - 0.985) * 40);
+  }
+  const u = x * CA + y * SA, v = -x * SA + y * CA - 0.32;
+  const thick = 0.06 + 0.06 * Math.abs(u) + (u > 0 ? 0.04 * u : 0);
+  const band = Math.exp(-((v / thick) ** 2));
+  if (band > 0.004){
+    const du = Math.abs(u);
+    let d = 2.1 / (1 + (du * 0.45) ** 2);
+    const n = vnoise(u * 5 - t * 0.9, v * 26) * 0.6 + vnoise(u * 16 - t * 1.6, v * 70) * 0.4;
+    d *= 0.35 + 0.9 * n;
+    d *= u > 0 ? 1.15 : 0.7;
+    I = I * (1 - band * 0.6) + band * d;
+  }
+  return 1 - Math.exp(-I * 1.25);
+}
+
+/* Спрайты */
+const PAL = { v:"#050505", k:"#1a1a1c", g:"#3a3936", d:"#5a5853", m:"#a8a49c", b:"#ece8e1", e:"#f2d9a0", o:"#a07a40", r:"#d0645a" };
+const mirror = half => half.map(r => r + [...r].reverse().join(""));
+function drawSprite(ctx, rows, x, y, s = 1, flip = false, over = null){
+  const w = rows[0].length;
+  for (let j = 0; j < rows.length; j++) for (let i = 0; i < w; i++){
+    const ch = rows[j][flip ? w - 1 - i : i];
+    if (ch === "." || ch === " ") continue;
+    ctx.fillStyle = over && ch !== "e" && ch !== "r" ? over : PAL[ch];
+    ctx.fillRect(Math.round(x) + i * s, Math.round(y) + j * s, s, s);
+  }
+}
+const KEEPER = [
+  "...mm...",
+  "..mmmm..",
+  ".mmmmmm.",
+  ".mkkkkm.",
+  ".mkekem.",
+  ".mkkkkm.",
+  "..mddm..",
+  ".mddddmg",
+  "mddddmde",
+  "mddddm.g",
+  ".mddddm.",
+  "..m..m..",
+];
+const KEEPER_RUN = [...KEEPER.slice(0, 10), ".mdddm..", ".m...m.."];
+const KEEPER_RUN2 = [...KEEPER.slice(0, 10), "..mddm..", "...mm..."];
+const KEEPER_AIR = [...KEEPER.slice(0, 10), ".mddddm.", ".m....m."];
+const CRAWLER = mirror([
+  "........",
+  "....gggg",
+  "..ggdddd",
+  ".gddmddd",
+  "gddddrdd",
+  "gddddddd",
+  ".ggggggg",
+  ".g..g..g",
+]);
+const MOTH = mirror([
+  "mm....",
+  "mbm..k",
+  "mbbm.k",
+  "mmbmkk",
+  ".mmmkr",
+  "mbbm.k",
+  "mbm...",
+  "mm....",
+]);
+const WIDOW = mirror([
+  "m.......",
+  ".m......",
+  "..m...gg",
+  "...m.gdd",
+  "m...gddb",
+  ".m.gddbd",
+  "..mgdrdd",
+  "...gdddd",
+  "..mgdbdd",
+  ".m.gddbd",
+  "m...gddd",
+  "...m.gdd",
+  "..m...gd",
+  ".m.....g",
+  "m.......",
+]);
+const DEVOURER = mirror([
+  "....mmmm",
+  "..mm....",
+  ".m..dddd",
+  ".m.dgggg",
+  "m.dgbbbb",
+  "m.dgbvvv",
+  "m.dgbvve",
+  "m.dgbvvv",
+  "m.dgbbbb",
+  ".m.dgggg",
+  ".m..dddd",
+  "..mm....",
+  "....mmmm",
+]);
+
+/* ---------- логотип и название ---------- */
+document.querySelectorAll(".game-name").forEach(n => n.textContent = GAME_NAME);
+{
+  const c = document.getElementById("logoMark").getContext("2d");
+  const img = c.createImageData(11, 11);
+  for (let y = 0; y < 11; y++) for (let x = 0; x < 11; x++){
+    const r = Math.hypot(x - 5, y - 5);
+    const i = (y * 11 + x) * 4;
+    const v = r < 2.6 ? 0 : r < 3.8 ? 1 : r < 5.2 ? .35 : -1;
+    if (v < 0) continue;
+    shade(img.data, i, x, y, v);
+  }
+  c.putImageData(img, 0, 0);
+}
+
+/* ---------- hero: пиксельная чёрная дыра ---------- */
+(function hero(){
+  const cv = document.getElementById("bh"), ctx = cv.getContext("2d");
+  let w, h, img, cx, cy, R, scale, running = true, last = 0;
+  function layout(){
+    const rect = cv.getBoundingClientRect();
+    scale = rect.width > 1100 ? 4 : 3;
+    w = Math.ceil(rect.width / scale); h = Math.ceil(rect.height / scale);
+    cv.width = w; cv.height = h;
+    img = ctx.createImageData(w, h);
+    if (rect.width / rect.height > 1.05){ cx = w * .27; cy = h * .4; R = h * .27; }
+    else { cx = w * .5; cy = h * .26; R = Math.min(w * .32, h * .17); }
+  }
+  function cliff(t){
+    // скала с Хранителем, смотрящим на Око
+    const base = h - Math.round(h * .12);
+    const cw = Math.round(w * (w / h > 1.05 ? .2 : .42));
+    ctx.fillStyle = "#050505";
+    for (let x = 0; x < cw + 10; x++){
+      const top = base - Math.round((1 - x / cw) * h * .06) - Math.round(vnoise(x * .25, 3) * 6) + (x > cw ? (x - cw) * 3 : 0);
+      ctx.fillRect(x, top, 1, h - top);
+    }
+    const fx = cw - 14, fy = base - Math.round(h * 0) - 12 - Math.round(vnoise((cw - 10) * .25, 3) * 6);
+    drawSprite(ctx, KEEPER, fx, fy, 1, true);
+    const flick = .55 + .25 * Math.sin(t * 3.1) + .1 * Math.sin(t * 7.7);
+    const g = ctx.createRadialGradient(fx, fy + 8, 0, fx, fy + 8, 26);
+    g.addColorStop(0, `rgba(242,217,160,${.32 * flick})`); g.addColorStop(1, "rgba(242,217,160,0)");
+    ctx.fillStyle = g; ctx.fillRect(fx - 26, fy - 18, 52, 52);
+  }
+  function frame(t){
+    const d = img.data;
+    const orbit = t * .12, px = cx + Math.cos(orbit) * R * 1.75, py = cy + Math.sin(orbit) * R * .35 - R * 1.05, pr = Math.max(2, R * .05);
+    for (let y = 0; y < h; y++){
+      for (let x = 0; x < w; x++){
+        const i = (y * w + x) * 4;
+        let v = bhIntensity((x - cx) / R, (y - cy) / R, t);
+        const sh = hash2(x, y);
+        if (sh > .9965) v = Math.max(v, .35 + .3 * Math.sin(t * 2 + sh * 900));
+        const pd = Math.hypot(x - px, y - py);
+        if (pd < pr){ const lit = ((cx - px) * (x - px) + (cy - py) * (y - py)) / (pd * Math.hypot(cx - px, cy - py) + .001); v = pd > pr - 1.2 && lit > .2 ? .7 : .02; }
+        shade(d, i, x, y, v);
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    cliff(t);
+  }
+  function loop(ms){
+    if (!running) return;
+    if (ms - last > 42){ last = ms; frame(ms / 1000); }
+    requestAnimationFrame(loop);
+  }
+  layout(); frame(3);
+  new ResizeObserver(() => { layout(); frame(last / 1000 || 3); }).observe(cv);
+  if (!RM){
+    new IntersectionObserver(es => { const vis = es[0].isIntersecting; if (vis && !running){ running = true; requestAnimationFrame(loop); } else if (!vis) running = false; }).observe(cv);
+    requestAnimationFrame(loop);
+  } else running = false;
+})();
+
+/* ---------- навигация и глубина ---------- */
+{
+  const nav = document.getElementById("nav"), depth = document.getElementById("depth");
+  const onScroll = () => {
+    nav.classList.toggle("scrolled", scrollY > 40);
+    const max = document.documentElement.scrollHeight - innerHeight;
+    const f = max > 0 ? scrollY / max : 0;
+    depth.textContent = f > .985 ? "−∞ м" : "−" + Math.round(f * 2400).toLocaleString("ru-RU") + " м";
+  };
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+}
+
+/* ---------- уровни ---------- */
+const SW = 240, SH = 135;
+function sceneAsh(x, y){
+  let v = .03 + .22 * Math.pow(y, 1.7);
+  const dx = (x - .74) * SW / SH, dy = y - .27, r = Math.hypot(dx, dy) / .1;
+  if (r < 1) v = 0; else v += Math.exp(-(((r - 1.12) / .13) ** 2)) * .9 + .25 * Math.exp(-(r - 1) / 1.3);
+  const X = x * SW, Y = y * SH;
+  const bi = Math.floor(X / 11), hb = hash2(bi, 1), t = (X % 11) / 11;
+  let h1 = .56 + hb * .13; if (hb > .35) h1 -= .05 * (1 - Math.abs(t - .5) * 2);
+  if (y > h1){ v = .1; if (hash2(bi, Math.floor(Y / 4)) > .965 && (X % 11) > 4 && (X % 11) < 7 && (Y % 4) < 2 && y > h1 + .06) return 2; }
+  const ci = Math.floor(X / 19), hc = hash2(ci, 5), tc = (X % 19) / 19;
+  let h2 = .76 + hc * .1; if (hc > .6 && Math.abs(tc - .5) < .1) h2 -= .14;
+  if (y > h2) v = .012;
+  if (hash2(X | 0, Y | 0) > .992 && y < .9) v = .55;
+  return v;
+}
+const CRYST = (() => { const a = []; for (let k = 0; k < 13; k++) a.push({ cx: hash2(k, 11), w: .03 + hash2(k, 12) * .05, h: .15 + hash2(k, 13) * .35, up: k % 3 !== 0 }); return a; })();
+function sceneGlass(x, y){
+  let v = .025 + .07 * (1 - y);
+  const X = x * SW;
+  const m = X % 62;
+  if (Math.abs(m - 31) < 5 && y > .18) v = .07;
+  const ar = Math.hypot((m - 31) / 26, (y - .3) / .2);
+  if (ar > .95 && ar < 1.15 && y < .3) v = .07;
+  for (const c of CRYST){
+    const base = c.up ? .86 : 0, tip = c.up ? base - c.h : c.h;
+    const f = c.up ? (y - tip) / c.h : (tip - y) / c.h;
+    if (f >= 0 && f <= 1){
+      const half = c.w * f * SH / SW, dx = x - c.cx;
+      if (Math.abs(dx) < half){
+        const edge = half - Math.abs(dx) < .004;
+        v = edge ? .9 : dx < 0 ? .3 + .25 * (1 - f) : .14;
+      }
+    }
+  }
+  if (y > .86){ v = y < .868 ? .45 : .015; if (hash2(X | 0, (y * SH) | 0) > .97 && y > .87) v = .2; }
+  return v;
+}
+function sceneGarden(x, y){
+  let v = .04 + .2 * Math.exp(-(((y - .35) / .4) ** 2));
+  const dx = (x - .5) * SW / SH, dy = y - .33, r = Math.hypot(dx, dy) / .17;
+  if (r < 1) v = 0; else v += Math.exp(-(((r - 1.04) / .045) ** 2)) * 1.3 + .35 * Math.exp(-(r - 1) / .7);
+  for (let k = 0; k < 16; k++){
+    const x0 = hash2(k, 21), top = .42 + hash2(k, 22) * .38;
+    const cxk = x0 + .03 * Math.sin(y * 7 + k) * (1 - y);
+    if (y > top && Math.abs(x - cxk) < .0045) v = .015;
+    const bx = x0 + .03 * Math.sin(top * 7 + k) * (1 - top);
+    const br = Math.hypot((x - bx) * SW / SH, y - top) / .022;
+    if (br < 1) v = br > .72 ? .8 : .03;
+  }
+  for (let k = 0; k < 9; k++){
+    const xv = hash2(k, 31), len = .12 + hash2(k, 32) * .3;
+    if (y < len && Math.abs(x - xv - .01 * Math.sin(y * 20 + k)) < .003) v = .015;
+  }
+  if (y > .88 + .03 * vnoise(x * 18, 4)) v = .012;
+  return v;
+}
+function obsAbove(x, y){
+  let v = .03 + .12 * y;
+  if (hash2((x * SW) | 0, (y * SH) | 0) > .994) v = .7;
+  const mt = .5 + .08 * vnoise(x * 6, 9);
+  if (y > mt) v = .07;
+  const dx = (x - .34) * SW / SH, dy = y - .66, dr = Math.hypot(dx, dy);
+  if (dr < .26 && y < .66) v = .02;
+  if (Math.abs(x - .37) < .012 && y < .62 && dr < .26 && dr > .05) v = .22;
+  const tx = .37 + (.66 - y) * .45;
+  if (y > .3 && y < .48 && Math.abs(x - (.37 + (.48 - y) * .55)) < .01) v = .02;
+  if (Math.abs(dx + .12) < .015 && dy > -.1 && dy < -.06) return 2;
+  if (y > .62 && y < .7 && x > .1 && x < .6) v = .02;
+  return v;
+}
+function sceneObs(x, y){
+  const yw = .7;
+  if (y < yw) return obsAbove(x, y);
+  const yr = 2 * yw - y, wob = .006 * Math.sin(y * 140);
+  let v = obsAbove(x + wob, yr);
+  v = v === 2 ? .6 : v * .45;
+  if (hash2((x * SW) | 0, (y * SH) | 0) > .985) v = .3;
+  if (y < yw + .006) v = .5;
+  return v;
+}
+function sceneHorizon(x, y){
+  let v = bhIntensity((x - .5) * SW / SH / .19, (y - .42) / .19, 2);
+  const rocks = [[.15,.78,.09],[.82,.7,.07],[.62,.9,.12],[.33,.6,.04]];
+  for (const [rx, ry, rs] of rocks){
+    const dx = (x - rx) * SW / SH, dy = y - ry;
+    const edge = rs * (.75 + .3 * vnoise(Math.atan2(dy, dx) * 3, rx * 10));
+    if (Math.hypot(dx, dy * (dy < 0 ? 2.2 : .9)) < edge) v = dy < -rs * .32 ? .55 : .015;
+  }
+  return v;
+}
+const LEVELS = [
+  { name:"Пепельные Окраины", depth:"0 м", fn:sceneAsh, fig:[54,96],
+    desc:"Верхние кварталы Ольма, засыпанные пеплом сгоревших фонарей. Здесь учатся двум вещам: бить первым и не смотреть вверх.",
+    enemies:"Пепельный ползун, Сажевик", boss:"Старый Фонарщик", ability:"Игла" },
+  { name:"Стеклянные Катакомбы", depth:"−340 м", fn:sceneGlass, fig:[118,104],
+    desc:"Притяжение Ока сплавило песок в стекло. Каждый шаг звенит, а любое отражение может оказаться врагом.",
+    enemies:"Стеклянная моль, Осколочник", boss:"Двойник Хранителя", ability:"Рывок" },
+  { name:"Сад Затмения", depth:"−910 м", fn:sceneGarden, fig:[150,107],
+    desc:"Сад цветёт только в темноте. Растения тянутся не к свету, а к Оку и душат всё, что светится.",
+    enemies:"Ловчий стебель, Спороносец", boss:"Вдова Затмения", ability:"Двойной прыжок" },
+  { name:"Затопленная Обсерватория", depth:"−1 700 м", fn:sceneObs, fig:[178,82],
+    desc:"Здесь астрономы Ольма первыми увидели Око и первыми утонули, когда время у края стало течь медленнее воды.",
+    enemies:"Утопший звездочёт, Медузий фонарь", boss:"Смотритель Линз", ability:"Фонарь: скрытые пути" },
+  { name:"Горизонт Событий", depth:"−∞", fn:sceneHorizon, fig:[30,92],
+    desc:"Здесь падение длится вечно. Платформы собраны из обломков всех уровней сразу, а секунда у края равна году наверху.",
+    enemies:"Отголоски Хранителей", boss:"Пожиратель Света", ability:"Финал зависит от собранного света" },
+];
+const sceneCache = new Map();
+function renderScene(idx){
+  const cv = document.getElementById("scene"), ctx = cv.getContext("2d");
+  if (!sceneCache.has(idx)){
+    const img = ctx.createImageData(SW, SH), L = LEVELS[idx];
+    for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) shade(img.data, (y * SW + x) * 4, x, y, L.fn(x / SW, y / SH));
+    const off = document.createElement("canvas"); off.width = SW; off.height = SH;
+    const o = off.getContext("2d"); o.putImageData(img, 0, 0);
+    const [fx, fy] = L.fig;
+    const g = o.createRadialGradient(fx + 7, fy + 8, 0, fx + 7, fy + 8, 18);
+    g.addColorStop(0, "rgba(242,217,160,.3)"); g.addColorStop(1, "rgba(242,217,160,0)");
+    o.fillStyle = g; o.fillRect(fx - 14, fy - 12, 44, 44);
+    drawSprite(o, KEEPER, fx, fy, 1, idx === 4);
+    sceneCache.set(idx, off);
+  }
+  ctx.drawImage(sceneCache.get(idx), 0, 0);
+}
+{
+  const tabs = document.getElementById("tabs");
+  LEVELS.forEach((L, i) => {
+    const b = document.createElement("button");
+    b.className = "tab"; b.type = "button"; b.role = "tab"; b.id = "tab-" + i;
+    b.setAttribute("aria-controls", "panel");
+    b.innerHTML = `<span class="d">${String(i + 1).padStart(2, "0")} · глубина ${L.depth}</span><span class="nm">${L.name}</span>`;
+    b.addEventListener("click", () => select(i));
+    tabs.appendChild(b);
+  });
+  const all = [...tabs.children];
+  function select(i, focus){
+    all.forEach((b, k) => { b.setAttribute("aria-selected", k === i); b.tabIndex = k === i ? 0 : -1; });
+    const L = LEVELS[i];
+    document.getElementById("panel").setAttribute("aria-labelledby", "tab-" + i);
+    document.getElementById("lvName").textContent = L.name;
+    document.getElementById("lvDesc").textContent = L.desc;
+    document.getElementById("lvEnemies").textContent = L.enemies;
+    document.getElementById("lvBoss").textContent = L.boss;
+    document.getElementById("lvAbility").textContent = L.ability;
+    document.getElementById("sceneTag").textContent = `Зона ${i + 1} из 5 · ${L.depth}`;
+    renderScene(i);
+    if (focus){ all[i].focus(); all[i].scrollIntoView({ block: "nearest", inline: "nearest" }); }
+  }
+  tabs.addEventListener("keydown", e => {
+    const cur = all.findIndex(b => b.getAttribute("aria-selected") === "true");
+    let n = null;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") n = (cur + 1) % all.length;
+    if (e.key === "ArrowUp" || e.key === "ArrowLeft") n = (cur - 1 + all.length) % all.length;
+    if (e.key === "Home") n = 0; if (e.key === "End") n = all.length - 1;
+    if (n !== null){ e.preventDefault(); select(n, true); }
+  });
+  select(0);
+}
+
+/* ---------- герой и способности ---------- */
+{
+  const c = document.getElementById("portrait").getContext("2d");
+  drawSprite(c, KEEPER, 0, 0, 1);
+  const ICONS = [
+    { name:"Игла", text:"Основное оружие. Удар вниз отталкивает от врагов и шипов, так можно прыгать по ним.", g:[
+      "........b","......bb.",".....bb..","....bb...","...bb....","..mb.....",".m.m.....","m...m....","........."] },
+    { name:"Двойной прыжок", text:"Второй прыжок прямо в воздухе. В полной игре открывается в Саду Затмения, в демо доступен сразу.", g:[
+      "....b....","...bbb...","..bb.bb..",".bb...bb.","....m....","...mmm...","..mm.mm..",".mm...mm.","........."] },
+    { name:"Рывок", text:"Короткий бросок вперёд. Переносит через провалы, которые не перепрыгнуть.", g:[
+      ".........","mm...b...","......bb.","mmmm..bbb","......bb.","mm...b...",".........",".........","........."] },
+    { name:"Фонарь", text:"Освещает путь и выдаёт скрытые проходы. Чем меньше в нём света, тем сильнее становятся враги.", g:[
+      "....m....","...m.m...","..mmmmm..","..meeem..","..meeem..","..meeem..","..mmmmm..","...m.m...","........."] },
+  ];
+  const box = document.getElementById("abilities");
+  ICONS.forEach(a => {
+    const d = document.createElement("div"); d.className = "ab";
+    const cv = document.createElement("canvas"); cv.className = "px"; cv.width = 9; cv.height = 9; cv.setAttribute("aria-hidden", "true");
+    drawSprite(cv.getContext("2d"), a.g, 0, 0, 1);
+    const t = document.createElement("div"); t.innerHTML = `<b>${a.name}</b><p>${a.text}</p>`;
+    d.append(cv, t); box.appendChild(d);
+  });
+  const BEASTS = [
+    { name:"Пепельный ползун", zone:"Окраины", boss:false, s:CRAWLER, text:"Питается остывшими фитилями. Медленный, но ходит стаями и чует свет через стены." },
+    { name:"Стеклянная моль", zone:"Катакомбы", boss:false, s:MOTH, text:"Летит на любой свет. Если фонарь горит ярко, за вами увяжется целый рой." },
+    { name:"Вдова Затмения", zone:"Сад Затмения", boss:true, s:WIDOW, text:"Плетёт сети из теней между цветами. Её паутина гасит фонарь на три секунды." },
+    { name:"Пожиратель Света", zone:"Горизонт", boss:true, s:DEVOURER, text:"Тот, кто пьёт фонари Ольма. Никто из Хранителей не видел его дважды." },
+  ];
+  const bx = document.getElementById("beasts");
+  BEASTS.forEach(b => {
+    const el = document.createElement("article"); el.className = "beast";
+    const art = document.createElement("div"); art.className = "art";
+    const cv = document.createElement("canvas"); cv.className = "px"; cv.width = b.s[0].length; cv.height = b.s.length; cv.setAttribute("aria-hidden", "true");
+    cv.style.width = Math.min(128, b.s[0].length * 8) + "px";
+    drawSprite(cv.getContext("2d"), b.s, 0, 0, 1);
+    art.appendChild(cv);
+    el.innerHTML = `<div class="kind"><span>${b.zone}</span><span class="${b.boss ? "boss" : ""}">${b.boss ? "Босс" : "Враг"}</span></div><h3>${b.name}</h3><p>${b.text}</p>`;
+    el.prepend(art); bx.appendChild(el);
+  });
+}
+
+/* ---------- ДЕМО ---------- */
+(function demo(){
+  const W = 320, H = 180, TS = 8, COLS = 160, ROWS = 24;
+  const EMPTY = 0, SOLID = 1, SPIKE = 2, PLAT = 3;
+  const root = document.getElementById("game"), cv = document.getElementById("gc"), ctx = cv.getContext("2d");
+  const ov = document.getElementById("ov"), ovT = document.getElementById("ovTitle"), ovP = document.getElementById("ovText"), ovB = document.getElementById("ovBtn");
+  const masksEl = document.getElementById("masks"), shardsEl = document.getElementById("shards"), hintEl = document.getElementById("hint");
+
+  /* карта */
+  const grid = new Uint8Array(COLS * ROWS);
+  const set = (x, y, v) => { if (x >= 0 && x < COLS && y >= 0 && y < ROWS) grid[y * COLS + x] = v; };
+  const rect = (x, y, w, h, v = SOLID) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) set(i, j, v); };
+  rect(0, 0, COLS, 1);
+  rect(0, 0, 2, ROWS); rect(COLS - 2, 0, 2, ROWS);
+  rect(2, 20, 29, 4); rect(12, 18, 4, 2);
+  rect(31, 23, 7, 1); rect(31, 22, 7, 1, SPIKE); rect(33, 16, 3, 1, PLAT);
+  rect(38, 20, 23, 4); rect(50, 15, 6, 1, PLAT); rect(57, 17, 3, 3);
+  rect(60, 12, 2, 8); rect(62, 20, 8, 4);
+  rect(70, 23, 26, 1); rect(70, 22, 26, 1, SPIKE);
+  rect(72, 17, 4, 1); rect(79, 14, 4, 1); rect(86, 16, 4, 1); rect(92, 13, 3, 1);
+  rect(96, 20, 25, 4); rect(100, 1, 20, 13);
+  rect(121, 23, 8, 1); rect(121, 22, 8, 1, SPIKE);
+  rect(129, 20, 29, 4); rect(138, 17, 5, 3); rect(145, 14, 3, 1, PLAT);
+  const tileAt = (c, r) => (c < 0 || c >= COLS) ? SOLID : (r < 0 || r >= ROWS) ? EMPTY : grid[r * COLS + c];
+
+  const SPAWN_ENEMIES = [
+    ["c",24,19],["c",44,19],["c",53,19],["c",106,19],["c",114,19],["c",140,16],
+    ["w",82,10],["w",90,8],["w",110,16],["w",149,11],
+  ];
+  const SHARDS0 = [[13,16],[34,14],[52,13],[60.5,10],[80.5,12],[93,11],[109,17],[125,15],[140.5,14],[146,12]];
+  const LAMPS = [{ c:4, lit:true }, { c:65, lit:false }, { c:133, lit:false }];
+  const EXIT = { x: 153 * TS + 4, y: 17 * TS };
+  const HINTS = [
+    [0, 20, "← → — идти · Пробел — прыжок"],
+    [26, 38, "Шипы ранят. Удар вниз над ними отталкивает"],
+    [40, 50, "X — удар иглой"],
+    [54, 62, "Прыгните ещё раз в воздухе — двойной прыжок"],
+    [63, 68, "Фонарь зажжён: сюда вы вернётесь после гибели"],
+    [96, 102, "Shift — рывок. Пригодится впереди"],
+    [116, 122, "Провал: прыжок, второй прыжок и рывок"],
+    [148, 158, "Горизонт впереди"],
+  ];
+
+  /* предрисованные слои */
+  const level = document.createElement("canvas"); level.width = COLS * TS; level.height = ROWS * TS;
+  {
+    const l = level.getContext("2d");
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++){
+      const t = tileAt(c, r), x = c * TS, y = r * TS;
+      if (t === SOLID){
+        l.fillStyle = "#0b0b0c"; l.fillRect(x, y, TS, TS);
+        for (let k = 0; k < 5; k++){ const hx = hash2(c * 7 + k, r * 3), hy = hash2(c * 5, r * 11 + k); l.fillStyle = k < 2 ? "#18181a" : "#111113"; l.fillRect(x + ((hx * 8) | 0), y + ((hy * 8) | 0), 1 + (k & 1), 1); }
+        if (tileAt(c, r - 1) !== SOLID){
+          l.fillStyle = "#77746e"; l.fillRect(x, y, TS, 1);
+          l.fillStyle = "#3a3936"; l.fillRect(x, y + 1, TS, 1);
+          if (hash2(c, r) > .6){ l.fillStyle = "#3a3936"; l.fillRect(x + ((hash2(c, 9) * 6) | 0), y - 1, 1, 1); }
+          if (hash2(c, r + 40) > .7){ l.fillStyle = "#2a2a2b"; l.fillRect(x + ((hash2(c, 19) * 6) | 0), y - 2, 1, 2); }
+        }
+        if (tileAt(c - 1, r) !== SOLID){ l.fillStyle = "#26262a"; l.fillRect(x, y, 1, TS); }
+        if (tileAt(c + 1, r) !== SOLID){ l.fillStyle = "#26262a"; l.fillRect(x + TS - 1, y, 1, TS); }
+        if (tileAt(c, r + 1) !== SOLID && r + 1 < ROWS){ l.fillStyle = "#1a1a1c"; l.fillRect(x, y + TS - 1, TS, 1); if (hash2(c, r + 7) > .55){ l.fillStyle = "#26262a"; l.fillRect(x + ((hash2(c, 3) * 7) | 0), y + TS, 1, 2 + ((hash2(c, 4) * 4) | 0)); } }
+      } else if (t === SPIKE){
+        for (let k = 0; k < 2; k++){ const sx = x + k * 4; l.fillStyle = "#a8a49c"; l.fillRect(sx + 1, y + 2, 2, 1); l.fillRect(sx + 1, y + 3, 2, 5); l.fillStyle = "#ece8e1"; l.fillRect(sx + 1, y + 1, 1, 2); l.fillStyle = "#5a5853"; l.fillRect(sx, y + 5, 4, 3); }
+      } else if (t === PLAT){
+        l.fillStyle = "#77746e"; l.fillRect(x, y, TS, 1); l.fillStyle = "#2a2a2b"; l.fillRect(x, y + 1, TS, 2);
+        if (c % 3 === 0){ l.fillStyle = "#1e1e20"; l.fillRect(x + 3, y + 3, 2, 5); }
+      }
+    }
+  }
+  const far = document.createElement("canvas"); far.width = 640; far.height = H;
+  {
+    const f = far.getContext("2d");
+    for (let x = 0; x < 640; x++){
+      const bi = Math.floor(x / 23), hb = hash2(bi, 77);
+      let top = 70 + hb * 60; const t = (x % 23) / 23;
+      if (hb > .5 && Math.abs(t - .5) < .12) top -= 30 + hash2(bi, 78) * 20;
+      if (hb < .2) top += 40;
+      f.fillStyle = "#121214"; f.fillRect(x, top, 1, H - top);
+      if (hb > .3 && (x % 23) > 8 && (x % 23) < 11){ for (let y = top + 10; y < H; y += 9) if (hash2(x >> 2, y) > .8){ f.fillStyle = "#1d1d20"; f.fillRect(x, y, 1, 3); } }
+    }
+  }
+  const mid = document.createElement("canvas"); mid.width = 800; mid.height = H;
+  {
+    const m = mid.getContext("2d");
+    for (let x = 0; x < 800; x++){
+      const n = vnoise(x * .02, 5) * 50 + vnoise(x * .09, 6) * 12;
+      const top = 110 + n;
+      m.fillStyle = "#0d0d0f"; m.fillRect(x, top, 1, H - top);
+      const col = x % 97; if (col < 6){ m.fillStyle = "#0f0f11"; m.fillRect(x, 20 + hash2(x / 97 | 0, 1) * 30, 1, H); }
+    }
+  }
+  const sky = document.createElement("canvas"); sky.width = 150; sky.height = 100;
+  {
+    const s = sky.getContext("2d"), img = s.createImageData(150, 100);
+    const dim = GRAYS.map(c => c.map(v => Math.round(5 + (v - 5) * .5)));
+    for (let y = 0; y < 100; y++) for (let x = 0; x < 150; x++){
+      let v = bhIntensity((x - 70) / 16, (y - 46) / 16, 1.5) * .9;
+      if (hash2(x + 300, y) > .993) v = .5;
+      shade(img.data, (y * 150 + x) * 4, x, y, v, dim);
+    }
+    s.putImageData(img, 0, 0);
+  }
+  const light = document.createElement("canvas"); light.width = W; light.height = H;
+  const lctx = light.getContext("2d");
+
+  /* состояние */
+  let P, enemies, shards, parts, cam, state = "intro", hp, maxHp = 5, spawn, timeF, got, shake, flash, hintTxt = "";
+  const keys = { left:0, right:0, up:0, down:0, jump:0, atk:0, dash:0 };
+  const press = { jump:0, atk:0, dash:0 };
+  function makeEnemies(){
+    enemies = SPAWN_ENEMIES.map(([t, c, r]) => t === "c"
+      ? { t, x: c * TS, y: (r + 1) * TS - 8, w: 14, h: 8, vx: 0, vy: 0, dir: hash2(c, r) > .5 ? 1 : -1, hp: 2, flash: 0, kb: 0 }
+      : { t, x: c * TS, y: r * TS, hx: c * TS, hy: r * TS, w: 10, h: 8, vx: 0, vy: 0, hp: 2, flash: 0, ph: hash2(c, r) * 6 });
+  }
+  function reset(full){
+    if (full){
+      shards = SHARDS0.map(([c, r]) => ({ x: c * TS + 2, y: r * TS, got: false }));
+      LAMPS.forEach((l, i) => l.lit = i === 0); spawn = { x: LAMPS[0].c * TS + 10, y: 20 * TS - 12 };
+      timeF = 0; got = 0;
+    }
+    P = { x: spawn.x, y: spawn.y, w: 6, h: 12, vx: 0, vy: 0, face: 1, ground: false, coyote: 0, jbuf: 0, jumps: 1, dashT: 0, dashCD: 0, canDash: true, atkT: 0, atkCD: 0, atkDir: "s", inv: 0, anim: 0, safe: { x: spawn.x, y: spawn.y } };
+    hp = maxHp; makeEnemies(); parts = []; cam = { x: Math.max(0, P.x - W / 2), y: ROWS * TS - H }; shake = 0; flash = 0;
+    hud();
+  }
+  function hud(){
+    masksEl.innerHTML = ""; for (let i = 0; i < maxHp; i++){ const m = document.createElement("i"); if (i >= hp) m.className = "off"; masksEl.appendChild(m); }
+    shardsEl.textContent = `${got}/${SHARDS0.length}`;
+  }
+  const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  function hitTile(x, y, w, h, type){
+    const c0 = Math.floor(x / TS), c1 = Math.floor((x + w - .001) / TS), r0 = Math.floor(y / TS), r1 = Math.floor((y + h - .001) / TS);
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (tileAt(c, r) === type) return true;
+    return false;
+  }
+  function moveX(e){
+    e.x += e.vx; e.wall = false;
+    if (hitTile(e.x, e.y, e.w, e.h, SOLID)){
+      if (e.vx > 0) e.x = Math.floor((e.x + e.w) / TS) * TS - e.w; else e.x = (Math.floor(e.x / TS) + 1) * TS;
+      e.vx = 0; e.wall = true;
+    }
+  }
+  function moveY(e, plat){
+    const prevB = e.y + e.h; e.y += e.vy; e.ground = false;
+    if (hitTile(e.x, e.y, e.w, e.h, SOLID)){
+      if (e.vy > 0){ e.y = Math.floor((e.y + e.h) / TS) * TS - e.h; e.ground = true; } else e.y = (Math.floor(e.y / TS) + 1) * TS;
+      e.vy = 0;
+    } else if (plat && e.vy > 0){
+      const r = Math.floor((e.y + e.h - .001) / TS);
+      if (r * TS >= prevB - .001){
+        const c0 = Math.floor(e.x / TS), c1 = Math.floor((e.x + e.w - .001) / TS);
+        for (let c = c0; c <= c1; c++) if (tileAt(c, r) === PLAT){ e.y = r * TS - e.h; e.vy = 0; e.ground = true; break; }
+      }
+    }
+  }
+  function burst(x, y, n, col, spd = 1.5, life = 26){
+    for (let i = 0; i < n; i++){ const a = Math.random() * Math.PI * 2, s = Math.random() * spd; parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - .4, life, max: life, c: col }); }
+  }
+  function hurt(fromX, spike){
+    if (P.inv > 0) return;
+    hp--; hud(); flash = 6; shake = 8; P.inv = 70;
+    burst(P.x + 3, P.y + 6, 14, "#ece8e1", 2);
+    if (hp <= 0){ die(); return; }
+    if (spike){ P.x = P.safe.x; P.y = P.safe.y; P.vx = 0; P.vy = 0; }
+    else { P.vx = P.x < fromX ? -2.6 : 2.6; P.vy = -2.6; P.dashT = 0; }
+  }
+  function die(){
+    state = "dead";
+    showOv("Фонарь погас", "Хранитель вернётся к последнему зажжённому фонарю. Осколки света останутся с вами.", "Вернуться");
+  }
+  function step(){
+    timeF++;
+    const dir = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+    if (press.jump){ P.jbuf = 7; press.jump = 0; }
+    if (P.jbuf > 0) P.jbuf--;
+    if (P.dashCD > 0) P.dashCD--;
+    if (P.atkCD > 0) P.atkCD--;
+    if (P.inv > 0) P.inv--;
+    if (press.dash){ press.dash = 0; if (P.canDash && P.dashCD <= 0 && P.dashT <= 0){ P.dashT = 11; P.dashCD = 26; if (!P.ground) P.canDash = false; if (dir) P.face = dir; } }
+    if (P.dashT > 0){
+      P.dashT--; P.vx = P.face * 4; P.vy = 0;
+      if (timeF % 2 === 0) parts.push({ x: P.x + 3, y: P.y + 6, vx: 0, vy: 0, life: 12, max: 12, c: "#a8a49c", ghost: P.face });
+    } else {
+      P.vx += (dir * 1.75 - P.vx) * (P.ground ? .4 : .22);
+      if (dir) P.face = dir;
+      P.vy = Math.min(P.vy + .26, 4.6);
+      if (P.jbuf > 0){
+        if (P.coyote > 0){ P.vy = -4.75; P.coyote = 0; P.jbuf = 0; burst(P.x + 3, P.y + 12, 5, "#5a5853", .8, 14); }
+        else if (P.jumps > 0){ P.vy = -4.2; P.jumps--; P.jbuf = 0; burst(P.x + 3, P.y + 12, 8, "#ece8e1", 1.2, 16); }
+      }
+      if (!keys.jump && P.vy < -1.4) P.vy *= .62;
+    }
+    moveX(P); moveY(P, !keys.down);
+    if (P.ground){ P.coyote = 6; P.jumps = 1; P.canDash = true; if (!hitTile(P.x - 6, P.y + 12, 18, 6, SPIKE) && hitTile(P.x, P.y + 12, P.w, 2, SOLID)) P.safe = { x: P.x, y: P.y }; }
+    else if (P.coyote > 0) P.coyote--;
+    if (P.y > ROWS * TS + 20){ P.inv = 0; hurt(P.x, true); }
+
+    if (press.atk){ press.atk = 0;
+      if (P.atkCD <= 0){
+        P.atkT = 9; P.atkCD = 18;
+        P.atkDir = keys.up ? "u" : (keys.down && !P.ground) ? "d" : "s";
+        const hb = P.atkDir === "u" ? { x: P.x - 6, y: P.y - 15, w: 18, h: 15 } : P.atkDir === "d" ? { x: P.x - 6, y: P.y + P.h, w: 18, h: 15 } : { x: P.face > 0 ? P.x + P.w : P.x - 17, y: P.y, w: 17, h: 11 };
+        let hit = false;
+        for (const e of enemies) if (e.hp > 0 && overlap(hb, e)){
+          e.hp--; e.flash = 8; hit = true;
+          const kx = P.atkDir === "s" ? P.face : Math.sign(e.x - P.x) || 1;
+          if (e.t === "c") e.kb = kx * 3; else { e.vx = kx * 2.4; e.vy = P.atkDir === "u" ? -2 : P.atkDir === "d" ? 2 : -.6; }
+          burst(e.x + e.w / 2, e.y + e.h / 2, 6, "#ece8e1", 1.6, 14);
+          if (e.hp <= 0){ burst(e.x + e.w / 2, e.y + e.h / 2, 18, "#a8a49c", 2.2, 30); shake = 5; }
+        }
+        if (P.atkDir === "d" && hitTile(hb.x, hb.y, hb.w, hb.h, SPIKE)){ hit = true; burst(P.x + 3, P.y + 18, 6, "#f2d9a0", 1.4, 12); }
+        if (hit){
+          if (P.atkDir === "d"){ P.vy = -4.3; P.jumps = 1; P.canDash = true; }
+          else if (P.atkDir === "s") P.vx -= P.face * 1.6;
+        }
+      }
+    }
+    if (P.atkT > 0) P.atkT--;
+
+    if (hitTile(P.x + 1, P.y + 3, P.w - 2, P.h - 3, SPIKE)){ P.inv = 0; hurt(P.x, true); }
+
+    for (const e of enemies){
+      if (e.hp <= 0) continue;
+      if (e.flash > 0) e.flash--;
+      if (e.t === "c"){
+        e.vy = Math.min(e.vy + .26, 4);
+        e.vx = e.kb ? e.kb : e.dir * .45;
+        if (e.kb){ e.kb *= .8; if (Math.abs(e.kb) < .2) e.kb = 0; }
+        moveX(e); moveY(e, true);
+        if (!e.kb){
+          const fx = e.dir > 0 ? e.x + e.w + 1 : e.x - 1;
+          const ahead = tileAt(Math.floor(fx / TS), Math.floor((e.y + e.h + 2) / TS));
+          if (e.wall || (e.ground && ahead !== SOLID && ahead !== PLAT)) e.dir *= -1;
+        }
+      } else {
+        e.ph += .05;
+        const dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy);
+        if (d < 96){ e.vx += dx / d * .06; e.vy += dy / d * .06; }
+        else { e.vx += (e.hx - e.x) * .002; e.vy += (e.hy + Math.sin(e.ph) * 10 - e.y) * .004; }
+        e.vx *= .96; e.vy *= .96;
+        const sp = Math.hypot(e.vx, e.vy); if (sp > .85){ e.vx *= .85 / sp; e.vy *= .85 / sp; }
+        e.x += e.vx; e.y += e.vy;
+      }
+      if (overlap({ x: P.x + 1, y: P.y + 2, w: P.w - 2, h: P.h - 2 }, e)) hurt(e.x + e.w / 2, false);
+    }
+    for (const s of shards) if (!s.got && overlap(P, { x: s.x - 1, y: s.y - 1, w: 6, h: 8 })){ s.got = true; got++; hud(); burst(s.x + 2, s.y + 3, 14, "#f2d9a0", 1.8, 24); }
+    LAMPS.forEach(l => {
+      const lx = l.c * TS + 4;
+      if (!l.lit && Math.abs(P.x - lx) < 10 && P.y > 17 * TS){ l.lit = true; spawn = { x: lx + 6, y: 20 * TS - 12 }; hp = maxHp; hud(); burst(lx, 20 * TS - 14, 20, "#f2d9a0", 1.6, 30); }
+    });
+    if (Math.hypot(P.x + 3 - EXIT.x, P.y + 6 - EXIT.y) < 12) win();
+
+    for (const p of parts){ p.x += p.vx; p.y += p.vy; p.vy += p.ghost ? 0 : .06; p.life--; }
+    parts = parts.filter(p => p.life > 0);
+    if (Math.random() < .25) parts.push({ x: cam.x + Math.random() * W, y: cam.y - 2, vx: -.15 + Math.random() * .1, vy: .25 + Math.random() * .2, life: 400, max: 400, c: "#3a3936", ash: true });
+    P.anim += Math.abs(P.vx) > .3 && P.ground ? .18 : 0;
+
+    const tx = Math.max(0, Math.min(COLS * TS - W, P.x - W / 2 + P.face * 24));
+    const ty = Math.max(0, Math.min(ROWS * TS - H, P.y - H * .58));
+    cam.x += (tx - cam.x) * .1; cam.y += (ty - cam.y) * .1;
+    if (shake > 0) shake--; if (flash > 0) flash--;
+
+    const col = P.x / TS; let h = "";
+    for (const [a, b, t] of HINTS) if (col >= a && col < b) h = t;
+    if (h !== hintTxt){ hintTxt = h; hintEl.textContent = h; }
+  }
+  function win(){
+    state = "win";
+    const s = Math.floor(timeF / 60), t = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    showOv("Первый горизонт пройден", `Время ${t} · осколки света ${got} из ${SHARDS0.length}. Дальше — Стеклянные Катакомбы.`, "Пройти ещё раз");
+  }
+  function drawPortal(t){
+    const x = Math.round(EXIT.x - cam.x), y = Math.round(EXIT.y - cam.y);
+    for (let a = 0; a < 40; a++){
+      const ang = a / 40 * Math.PI * 2 + t * .03, rr = 9 + Math.sin(a * 3 + t * .1);
+      const b = .5 + .5 * Math.cos(ang - .6);
+      ctx.fillStyle = b > .7 ? "#ece8e1" : b > .35 ? "#a8a49c" : "#5a5853";
+      ctx.fillRect(Math.round(x + Math.cos(ang) * rr), Math.round(y + Math.sin(ang) * rr * .95), 1, 1);
+    }
+    ctx.fillStyle = "#ece8e1";
+    for (let k = -14; k <= 14; k++){ const yy = Math.round(y + 2 + k * .18 + Math.sin(k + t * .2) * .5); if (Math.abs(k) > 6 || yy > y) ctx.fillRect(x + k, yy, 1, 1); }
+    ctx.fillStyle = "#050505"; ctx.beginPath(); ctx.arc(x, y, 6.5, 0, Math.PI * 2); ctx.fill();
+  }
+  function render(){
+    const t = timeF;
+    const sx = shake ? (Math.random() * 4 - 2) | 0 : 0, sy = shake ? (Math.random() * 4 - 2) | 0 : 0;
+    const cx = Math.round(cam.x) + sx, cy = Math.round(cam.y) + sy;
+    ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(sky, Math.round(150 - cx * .04), -6 - Math.round(cy * .1));
+    const fx = -((cx * .2) % 640); ctx.drawImage(far, Math.round(fx), 0); ctx.drawImage(far, Math.round(fx) + 640, 0);
+    const mx = -((cx * .45) % 800); ctx.drawImage(mid, Math.round(mx), 10); ctx.drawImage(mid, Math.round(mx) + 800, 10);
+    ctx.drawImage(level, cx, cy, W, H, 0, 0, W, H);
+
+    LAMPS.forEach(l => {
+      const x = l.c * TS + 4 - cx, y = 20 * TS - cy;
+      ctx.fillStyle = "#3a3936"; ctx.fillRect(x, y - 18, 1, 18); ctx.fillRect(x - 2, y - 18, 5, 1);
+      ctx.fillStyle = "#5a5853"; ctx.fillRect(x - 2, y - 17, 5, 1); ctx.fillRect(x - 2, y - 13, 5, 1); ctx.fillRect(x - 2, y - 16, 1, 3); ctx.fillRect(x + 2, y - 16, 1, 3);
+      ctx.fillStyle = l.lit ? (t % 20 < 10 ? "#f2d9a0" : "#e8c888") : "#1a1a1c"; ctx.fillRect(x - 1, y - 16, 3, 3);
+    });
+    for (const e of enemies){
+      if (e.hp <= 0) continue;
+      const over = e.flash > 0 ? "#ece8e1" : null;
+      if (e.t === "c") drawSprite(ctx, CRAWLER, e.x - 1 - cx, e.y - cy, 1, e.dir < 0, over);
+      else { const fl = Math.sin(t * .4 + e.ph) > 0; drawSprite(ctx, fl ? MOTH : MOTH.map(r => r.replace(/^m/, ".").replace(/m$/, ".")), e.x - 1 - cx, e.y - cy, 1, false, over); }
+    }
+    for (const p of parts){
+      if (p.ghost){ ctx.globalAlpha = p.life / p.max * .5; drawSprite(ctx, KEEPER_AIR, p.x - 3 - cx, p.y - 6 - cy, 1, p.ghost < 0, "#5a5853"); ctx.globalAlpha = 1; continue; }
+      ctx.fillStyle = p.c; ctx.globalAlpha = p.ash ? .8 : Math.min(1, p.life / p.max * 1.5);
+      ctx.fillRect(Math.round(p.x - cx), Math.round(p.y - cy), 1, 1); ctx.globalAlpha = 1;
+    }
+    if (!(P.inv > 0 && (t >> 2) % 2)){
+      const fr = !P.ground ? KEEPER_AIR : Math.abs(P.vx) > .3 ? ((P.anim | 0) % 2 ? KEEPER_RUN : KEEPER_RUN2) : KEEPER;
+      drawSprite(ctx, fr, P.x - 1 - cx, P.y - cy, 1, P.face < 0, P.dashT > 0 ? "#ece8e1" : null);
+    }
+    if (P.atkT > 0){
+      const k = P.atkT / 9; ctx.fillStyle = k > .5 ? "#ece8e1" : "#a8a49c";
+      const ox = P.x + 3 - cx, oy = P.y + 6 - cy;
+      for (let a = -1; a <= 1; a += .08){
+        let px, py;
+        if (P.atkDir === "s"){ px = ox + P.face * (8 + Math.cos(a) * 8); py = oy + Math.sin(a) * 8; }
+        else { const s = P.atkDir === "u" ? -1 : 1; px = ox + Math.sin(a) * 9; py = oy + s * (10 + Math.cos(a) * 7); }
+        ctx.fillRect(Math.round(px), Math.round(py), 1, 1);
+        if (Math.abs(a) < .6) ctx.fillRect(Math.round(px + (P.atkDir === "s" ? -P.face : 0)), Math.round(py + (P.atkDir === "u" ? 1 : P.atkDir === "d" ? -1 : 0)), 1, 1);
+      }
+    }
+
+    /* свет */
+    lctx.globalCompositeOperation = "source-over"; lctx.clearRect(0, 0, W, H);
+    lctx.fillStyle = "rgba(3,3,4,.66)"; lctx.fillRect(0, 0, W, H);
+    lctx.globalCompositeOperation = "destination-out";
+    const hole = (x, y, r, a = 1) => { const g = lctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(0,0,0,${a})`); g.addColorStop(.55, `rgba(0,0,0,${a * .55})`); g.addColorStop(1, "rgba(0,0,0,0)"); lctx.fillStyle = g; lctx.fillRect(x - r, y - r, r * 2, r * 2); };
+    const flick = 1 + .04 * Math.sin(t * .23) + .03 * Math.sin(t * .71);
+    hole(P.x + 3 + P.face * 3 - cx, P.y + 7 - cy, 78 * flick);
+    LAMPS.forEach(l => { if (l.lit) hole(l.c * TS + 4 - cx, 20 * TS - 15 - cy, 54, .9); });
+    hole(EXIT.x - cx, EXIT.y - cy, 70, .95);
+    for (const s of shards) if (!s.got) hole(s.x + 2 - cx, s.y + 3 - cy, 14, .7);
+    ctx.drawImage(light, 0, 0);
+
+    /* самосветящееся */
+    const lg = ctx.createRadialGradient(P.x + 3 + P.face * 3 - cx, P.y + 8 - cy, 0, P.x + 3 + P.face * 3 - cx, P.y + 8 - cy, 34);
+    lg.addColorStop(0, "rgba(242,217,160,.16)"); lg.addColorStop(1, "rgba(242,217,160,0)");
+    ctx.fillStyle = lg; ctx.fillRect(P.x - 40 - cx, P.y - 30 - cy, 86, 76);
+    for (const s of shards){
+      if (s.got) continue;
+      const x = Math.round(s.x - cx), y = Math.round(s.y - cy + Math.sin(t * .08 + s.x) * 1.5);
+      ctx.fillStyle = t % 40 < 20 ? "#ece8e1" : "#f2d9a0";
+      ctx.fillRect(x + 1, y, 1, 1); ctx.fillRect(x, y + 1, 3, 3); ctx.fillRect(x + 1, y + 4, 1, 1);
+    }
+    for (const e of enemies){ if (e.hp > 0 && e.t === "c"){ ctx.fillStyle = "#d0645a"; const ex = Math.round(e.x - 1 - cx), ey = Math.round(e.y - cy); ctx.fillRect(ex + 5, ey + 4, 1, 1); ctx.fillRect(ex + 10, ey + 4, 1, 1); } }
+    drawPortal(t);
+    if (flash > 0){ ctx.fillStyle = `rgba(236,232,225,${flash / 14})`; ctx.fillRect(0, 0, W, H); }
+  }
+
+  /* цикл */
+  let raf = 0, acc = 0, lastT = 0;
+  function loop(ms){
+    if (state !== "play"){ raf = 0; return; }
+    const dt = Math.min(100, ms - (lastT || ms)); lastT = ms; acc += dt;
+    while (acc >= 1000 / 60){ step(); acc -= 1000 / 60; if (state !== "play") break; }
+    render();
+    raf = requestAnimationFrame(loop);
+  }
+  function showOv(title, text, btn){ ovT.textContent = title; ovP.textContent = text; ovB.textContent = btn; ov.hidden = false; root.classList.remove("playing"); }
+  function play(){
+    if (state === "dead") reset(false);
+    if (state === "win" || state === "intro") reset(true);
+    state = "play"; ov.hidden = true; root.classList.add("playing"); root.focus({ preventScroll: true });
+    lastT = 0; acc = 0; if (!raf) raf = requestAnimationFrame(loop);
+  }
+  function pause(){
+    if (state !== "play") return;
+    state = "pause"; Object.keys(keys).forEach(k => keys[k] = 0);
+    showOv("Пауза", "Нажмите, чтобы продолжить спуск.", "Продолжить");
+  }
+  ovB.addEventListener("click", e => { e.stopPropagation(); play(); });
+  root.addEventListener("click", () => { if (state === "play") root.focus({ preventScroll: true }); });
+  const MAP = { ArrowLeft:"left", KeyA:"left", ArrowRight:"right", KeyD:"right", ArrowUp:"up", KeyW:"up", ArrowDown:"down", KeyS:"down", Space:"jump", KeyZ:"jump", KeyX:"atk", KeyJ:"atk", ShiftLeft:"dash", ShiftRight:"dash", KeyC:"dash", KeyK:"dash" };
+  root.addEventListener("keydown", e => {
+    if (e.target !== root) return;
+    if (state !== "play"){ if ((e.code === "Enter" || e.code === "Space") && !ov.hidden){ e.preventDefault(); play(); } return; }
+    if (e.code === "Escape" || e.code === "KeyP"){ e.preventDefault(); pause(); return; }
+    const k = MAP[e.code]; if (!k) return;
+    e.preventDefault();
+    if (!keys[k] && press[k] !== undefined) press[k] = 1;
+    keys[k] = 1;
+  });
+  root.addEventListener("keyup", e => { const k = MAP[e.code]; if (k){ keys[k] = 0; e.preventDefault(); } });
+  root.addEventListener("focusout", e => { if (!root.contains(e.relatedTarget)) pause(); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
+  root.querySelectorAll(".touch button").forEach(b => {
+    const k = b.dataset.k;
+    const on = e => { e.preventDefault(); if (!keys[k] && press[k] !== undefined) press[k] = 1; keys[k] = 1; b.classList.add("on"); };
+    const off = e => { e.preventDefault(); keys[k] = 0; b.classList.remove("on"); };
+    b.addEventListener("pointerdown", on); b.addEventListener("pointerup", off); b.addEventListener("pointercancel", off); b.addEventListener("pointerleave", off);
+  });
+
+  reset(true); render();
+})();
+})();
+</script>
+</body>
+</html>
