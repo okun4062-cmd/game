@@ -1,4 +1,5 @@
 import { createBootScene } from './scenes/BootScene.js';
+import { createWorldScene } from './scenes/WorldScene.js';
 
 export function createGameConfig(PhaserApi) {
   return {
@@ -9,17 +10,11 @@ export function createGameConfig(PhaserApi) {
     backgroundColor: '#090d13',
     pixelArt: true,
     roundPixels: true,
-    scale: {
-      mode: PhaserApi.Scale.FIT,
-      autoCenter: PhaserApi.Scale.CENTER_BOTH,
-      width: 480,
-      height: 270
-    },
+    scale: { mode: PhaserApi.Scale.FIT, autoCenter: PhaserApi.Scale.CENTER_BOTH, width: 480, height: 270 },
     physics: { default: 'arcade', arcade: { gravity: { y: 700 }, debug: false } },
-    scene: [createBootScene(PhaserApi)]
+    scene: [createBootScene(PhaserApi), createWorldScene(PhaserApi)]
   };
 }
-
 function boot() {
   if (!window.Phaser) {
     const error = document.getElementById('load-error');
@@ -29,8 +24,6 @@ function boot() {
   }
   window.nocturneGame = new window.Phaser.Game(createGameConfig(window.Phaser));
 }
-
 if (typeof window !== 'undefined') {
-  if (window.Phaser) boot();
-  else window.addEventListener('load', boot, { once: true });
+  if (window.Phaser) boot(); else window.addEventListener('load', boot, { once: true });
 }
