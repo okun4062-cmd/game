@@ -154,7 +154,7 @@ footer{margin-top:25px;border-top:0;letter-spacing:.1em;color:#9992a9}
 <script>
 (function(){
 'use strict';
-const W=480,H=270,G=223,ZONE=1200,TAU=Math.PI*2;
+const W=480,H=270,G=223,ZONE=3200,TAU=Math.PI*2;
 const canvas=document.getElementById('screen'),ctx=canvas.getContext('2d',{alpha:false});
 const shell=document.getElementById('shell'),overlay=document.getElementById('overlay'),startBtn=document.getElementById('startBtn');
 ctx.imageSmoothingEnabled=false;
@@ -174,6 +174,32 @@ const stages=[
 ];
 const key={left:0,right:0,jump:0,attack:0,dash:0},press={jump:0,attack:0,dash:0};
 let state='menu',p,enemy=[],shots=[],particles=[],boss=null,gate=false,spawned=new Set(),defeated=0,record=0,cam=0,tick=0,shake=0,flash=0,combo=0,zoneSeen=-1,anim=0,last=0,acc=0,sound=false,ac=null,notice='',noticeT=0,clearStage=-1;
+const SAVE_KEY='nocturne-eclipse-save-v2';
+const ENEMY_OFFSETS=[200,380,570,760,940,1160,1330,1510,1720,1900,2080,2290,2500,2670];
+let checkpointX=52, relics=0, miniBoss=null, secretsFound=new Set(), collected=new Set(), miniDone=new Set();
+let savedData=null;
+try{savedData=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){}
+const continueBtn=document.getElementById('continueBtn');
+function saveGame(){
+ if(!p)return;
+ try{const v={v:2,defeated,checkpointX,relics,miniDone:[...miniDone],collected:[...collected],secrets:[...secretsFound]};
+ localStorage.setItem(SAVE_KEY,JSON.stringify(v));savedData=v;refreshContinueButton();}catch(e){}
+}
+function refreshContinueButton(){
+ continueBtn.classList.toggle('show',!!savedData&&(savedData.checkpointX>52||savedData.defeated>0||savedData.relics>0));
+}
+function resumeSave(){
+ if(!savedData)return;
+ defeated=Math.max(0,Number(savedData.defeated)||0);
+ checkpointX=Math.max(52,Number(savedData.checkpointX)||52);
+ relics=Math.max(0,Number(savedData.relics)||0);
+ miniDone=new Set(savedData.miniDone||[]);collected=new Set(savedData.collected||[]);secretsFound=new Set(savedData.secrets||[]);
+ spawned.clear();
+ resetGame(false);state='play';overlay.hidden=true;last=0;acc=0;
+ if(!anim)anim=requestAnimationFrame(loop);
+}
+continueBtn.addEventListener('click',resumeSave);
+refreshContinueButton();
 try{record=Number(localStorage.getItem('nocturne-best')||0)||0}catch(e){}
 document.getElementById('record').textContent='РЕКОРД: '+record;
 function rnd(a){let x=Math.sin(a*127.17+58.18)*43758.5453;return x-Math.floor(x)}
@@ -194,13 +220,19 @@ function particle(x,y,n,color,str=2){for(let i=0;i<n;i++){let a=rnd(tick*23+i*91
 function notif(s){notice=s;noticeT=140}
 function makePlayer(x){return {x,y:G-22,w:13,h:22,vx:0,vy:0,face:1,ground:true,jumps:0,attack:0,attackCd:0,hitSet:new Set(),dash:0,dashCd:0,inv:0,hp:6,max:6,run:0}}
 function resetGame(fromStart){
- let st=fromStart?0:Math.max(0,defeated);
- if(fromStart){defeated=0;spawned.clear();clearStage=-1}
- p=makePlayer(st*ZONE+52);cam=Math.max(0,p.x-120);enemy=[];shots=[];particles=[];boss=null;gate=false;zoneSeen=-1;shake=0;flash=0;tick=0;combo=0;
- Object.keys(key).forEach(k=>key[k]=0);Object.keys(press).forEach(k=>press[k]=0);render();
+ if(fromStart){
+  defeated=0;spawned.clear();clearStage=-1;checkpointX=52;relics=0;
+  miniDone.clear();collected.clear();secretsFound.clear();
+ }
+ const pos=fromStart?52:Math.max(defeated*ZONE+52,checkpointX);
+ p=makePlayer(pos);cam=Math.max(0,p.x-125);enemy=[];shots=[];particles=[];boss=null;
+ gate=false;miniBoss=null;zoneSeen=-1;shake=0;flash=0;tick=0;combo=0;
+ Object.keys(key).forEach(k=>key[k]=0);
+ Object.keys(press).forEach(k=>press[k]=0);
+ render();
 }
 function start(){
- if(state==='menu')resetGame(true);
+ if(state==='menu'){resetGame(true);saveGame()}
  if(state==='dead')resetGame(false);
  state='play';overlay.hidden=true;last=0;acc=0;
  if(!anim)anim=requestAnimationFrame(loop);
@@ -220,24 +252,29 @@ function die(){
 function winBoss(){
  if(!boss)return;
  let bx=boss.x,by=boss.y-35,idx=boss.stage;
- particle(bx,by,95,boss.theme.light,4);sfx(680,.5,'sine',.07);flash=18;shake=13;shots=[];boss=null;gate=false;
- defeated=Math.max(defeated,idx+1);clearStage=idx;p.hp=Math.min(p.max,p.hp+3);p.inv=90;combo=0;
+ particle(bx,by,95,boss.theme.light,4);sfx(680,.5,'sine',.07);flash=18;shake=13;
+ shots=[];boss=null;gate=false;
+ defeated=Math.max(defeated,idx+1);clearStage=idx;
+ checkpointX=defeated*ZONE+52;
+ p.hp=Math.min(p.max,p.hp+3);p.inv=90;combo=0;
  if(defeated>record){record=defeated;try{localStorage.setItem('nocturne-best',record)}catch(e){}document.getElementById('record').textContent='РЕКОРД: '+record}
- notif('✦ СТРАЖ ПОВЕРЖЕН · '+defeated+' / ∞ ✦');
+ notif('✦ СТРАЖ ПОВЕРЖЕН · '+defeated+' / ∞ ✦');saveGame();
 }
 function damage(amount,x){if(p.inv>0||p.dash>0||state!=='play')return;p.hp-=amount;p.inv=75;p.vy=-3.6;p.vx=x<p.x?2.5:-2.5;shake=9;flash=8;combo=0;particle(p.x+6,p.y+9,18,'#ff7f90',2);sfx(110,.2,'sawtooth');if(p.hp<=0)die()}
 function hitBoss(dmg){if(!boss||boss.inv>0)return;boss.hp-=dmg;boss.inv=9;boss.stagger+=dmg;particle(boss.x,boss.y-30,15,boss.theme.light,2.7);sfx(160+Math.random()*110,.075,'square',.02);shake=4;if(boss.hp<=0)winBoss()}
 function hitEnemy(e){if(e.inv>0)return;e.hp--;e.inv=12;e.vx=p.face*3;particle(e.x+6,e.y+7,9,e.color,1.9);sfx(250,.07);if(e.hp<=0){particle(e.x,e.y,15,e.color,2);combo++;if(combo%5===0)p.hp=Math.min(p.max,p.hp+1)}}
 function beginBoss(i){
- const theme=biome(i),x=i*ZONE+938;
- boss={stage:i,theme,x,home:x,y:G-3,w:72,h:79,hp:19+i%4*3,max:19+i%4*3,inv:0,t:0,phase:0,attackCd:90,warning:0,move:0,dir:-1,stagger:0};
- gate=true;shots=[];shake=6;sfx(70,.5,'sawtooth',.08);notif('⚔ '+theme.boss+' ⚔');
+ const theme=biome(i),x=i*ZONE+ZONE-245;
+ const hp=Math.min(62,24+(i%12)*2+Math.floor(i/12)*3);
+ boss={stage:i,theme,x,home:x,y:G-3,w:72,h:79,hp,max:hp,inv:0,t:0,phase:0,attackCd:95,warning:0,move:0,dir:-1,stagger:0};
+ gate=true;shots=[];shake=8;sfx(70,.5,'sawtooth',.08);notif('⚔ '+theme.boss+' ⚔');
 }
 function spawnEnemy(st,j){
  let id=st+':'+j;if(spawned.has(id))return;spawned.add(id);
- let x=st*ZONE+[230,430,545,1170][j];
- let type=(st+j)%3,color=biome(st).light;
- enemy.push({x,y:type===1?G-76:G-16,w:type===2?20:14,h:type===1?14:16,hp:type===2?3:2,inv:0,base:x,vx:0,vy:0,dir:j%2?1:-1,t:rnd(st*23+j)*100,type,color});
+ const x=st*ZONE+ENEMY_OFFSETS[j]+rnd(st*23+j)*35;
+ const type=(st*7+j)%3,color=biome(st).light;
+ enemy.push({x,y:type===1?G-76:G-16,w:type===2?20:14,h:type===1?14:16,
+  hp:type===2?3:2,inv:0,base:x,vx:0,vy:0,dir:j%2?1:-1,t:rnd(st*23+j)*100,type,color});
 }
 function makeShot(x,y,vx,vy,kind=0,c='#f4c68c',size=4){shots.push({x,y,vx,vy,kind,c,size,life:200});if(shots.length>90)shots.shift()}
 function aim(x,y,speed,spread=0){
@@ -258,6 +295,135 @@ function bossFire(){
  }
  sfx(80,.15,'triangle',.022);
 }
+
+// ACT II: shrines, elite enemy, ambient pickups, spikes and checkpoints
+function treasurePos(st,j){
+ const offsets=[480,1070,1430,2150,2440];
+ return {x:st*ZONE+offsets[j],y:j===1||j===3?G-87:G-27};
+}
+function updateAdventure(st){
+ const base=st*ZONE;
+ // Resting lanterns are persistent checkpoints.
+ for(const off of [950,2150]){
+  let x=base+off;if(p.x>x&&checkpointX<x){
+   checkpointX=x;p.hp=Math.min(p.max,p.hp+2);particle(x,G-29,26,biome(st).light,1.4);
+   notif('✦ МАЯК ЗАЖЖЁН · ПРОГРЕСС СОХРАНЁН');sfx(610,.12,'sine');saveGame();
+  }
+ }
+ // Relics are placed along the long traversal. High relics require platforms/double jump.
+ for(let j=0;j<5;j++){
+  const id=st+':'+j,at=treasurePos(st,j);
+  if(collected.has(id))continue;
+  if(Math.abs(p.x+6-at.x)<13&&Math.abs(p.y+12-at.y)<16){
+    collected.add(id);relics++;particle(at.x,at.y,28,biome(st).light,2.1);
+    sfx(740,.13,'sine');notif('✦ ОСКОЛОК СВЕТА · '+relics);
+    if(relics%5===0){p.hp=Math.min(p.max,p.hp+1);notif('✦ 5 ОСКОЛКОВ · +1 СЕРДЦЕ')}
+    saveGame();
+  }
+ }
+ // Secret altars are high above the road; climb the ruin to discover them.
+ for(const j of [0,1]){
+  const id=st+':'+j,at={x:base+[1340,2490][j],y:G-108};
+  if(secretsFound.has(id))continue;
+  if(Math.abs(p.x+6-at.x)<18&&Math.abs(p.y+10-at.y)<22){
+   secretsFound.add(id);relics+=3;p.hp=Math.min(p.max,p.hp+2);
+   particle(at.x,at.y,75,biome(st).light,3.5);
+   notif('✧ ТАЙНОЕ СВЯТИЛИЩЕ · +3 ОСКОЛКА');sfx(850,.28,'sine',.055);
+   saveGame();
+  }
+ }
+ // Floor-spikes: a readable obstacle to jump or dash over.
+ for(const off of [705,1760,2340,2650]){
+  const x=base+off,width=32;
+  if(p.x+p.w>x+4&&p.x<x+width-4&&p.y+p.h>G-8)damage(1,x+width/2);
+ }
+ // Elite guardian at the midpoint of each region.
+ const mx=base+1640;
+ if(!miniBoss&&!miniDone.has(st)&&p.x>mx-185&&p.x<mx+150)
+  miniBoss={stage:st,x:mx,y:G-3,base:mx,hp:11+st%6*2,max:11+st%6*2,t:0,cd:95,inv:0};
+ if(miniBoss){
+  const m=miniBoss;m.t++;m.x=m.base+Math.sin(m.t*.018)*52;
+  if(m.inv>0)m.inv--;
+  if(--m.cd<=0){
+   const dx=p.x-m.x,dy=p.y-m.y+27,a=Math.atan2(dy,dx);
+   for(let q=-1;q<=1;q++)makeShot(m.x,m.y-31,Math.cos(a+q*.22)*2,Math.sin(a+q*.22)*2,0,biome(st).light,4);
+   m.cd=110;particle(m.x,m.y-35,8,biome(st).light);
+  }
+  if(col(p,{x:m.x-17,y:m.y-44,w:34,h:45}))damage(1,m.x);
+  if(Math.abs(p.x-m.base)>530)miniBoss=null;
+ }
+ // Clean growing sets of distant enemies to keep endless runs efficient.
+ if(spawned.size>350){for(const id of spawned){if(Number(id.split(':')[0])<st-2)spawned.delete(id)}}
+ if(collected.size>450){ /* keep collected treasures because saves use ids */ }
+}
+function hitMiniBoss(){
+ if(!miniBoss||miniBoss.inv>0)return;
+ miniBoss.hp-=2;miniBoss.inv=11;particle(miniBoss.x,miniBoss.y-25,14,biome(miniBoss.stage).light,2);
+ sfx(260,.07,'square',.02);shake=4;
+ if(miniBoss.hp<=0){
+  const st=miniBoss.stage;miniDone.add(st);relics+=4;
+  particle(miniBoss.x,miniBoss.y-25,85,biome(st).light,3);
+  p.hp=Math.min(p.max,p.hp+2);notif('✦ ЭЛИТНЫЙ СТРАЖ ПОВЕРЖЕН · +4 ОСКОЛКА');
+  sfx(720,.27,'sine',.04);miniBoss=null;saveGame();
+ }
+}
+function drawAdventure(st){
+ const base=st*ZONE,b=biome(st);
+ for(const off of [705,1760,2340,2650]){
+  const x=base+off-cam;if(x<-40||x>W+40)continue;
+  rect(x-3,G-3,38,3,'#1b1720');
+  for(let k=0;k<4;k++){
+   let px=x+k*8;
+   ctx.fillStyle=b.light;ctx.beginPath();ctx.moveTo(px,G-1);ctx.lineTo(px+4,G-14-(k%2)*6);
+   ctx.lineTo(px+8,G-1);ctx.closePath();ctx.fill();
+   rect(px+2,G-2,4,1,'#fff8');
+  }
+ }
+ for(const off of [950,2150]){
+  const x=base+off-cam;if(x<-50||x>W+50)continue;
+  const lit=checkpointX>=base+off;
+  rect(x-6,G-46,12,46,b.stone);rect(x-13,G-49,26,6,b.near);
+  rect(x-3,G-59,6,15,lit?b.light:'#60576a');
+  circle(x,G-55,lit?26:14,b.light+(lit?'1f':'0a'));
+  if(lit)circle(x,G-55,3,'#fff1d9');
+ }
+ for(let j=0;j<5;j++){
+  const id=st+':'+j,at=treasurePos(st,j),x=at.x-cam,y=at.y+Math.sin(tick*.045+j)*3;
+  if(collected.has(id)||x<-35||x>W+35)continue;
+  circle(x,y,16,b.light+'12');
+  ctx.save();ctx.translate(x,y);ctx.rotate(Math.PI/4+tick*.008);
+  rect(-3,-3,7,7,b.light);rect(-1,-1,3,3,'#ffffff');ctx.restore();
+  for(let k=0;k<3;k++)circle(x+Math.sin(tick*.02+k*2)*9,y+Math.cos(tick*.03+k)*9,1,b.light);
+ }
+ for(const j of [0,1]){
+  const id=st+':'+j,x=base+[1340,2490][j]-cam,y=G-108;
+  if(x<-50||x>W+50||secretsFound.has(id))continue;
+  circle(x,y,25,b.light+'20');circle(x,y,15,b.light+'26');
+  for(let i=0;i<7;i++){
+   let a=i*TAU/7+tick*.009;
+   rect(x+Math.cos(a)*19,y+Math.sin(a)*17,3,3,b.light+'d0');
+  }
+  rect(x-6,y-7,12,14,'#161425');rect(x-4,y-5,8,10,b.light);
+  rect(x-2,y-2,4,4,'#fff');
+ }
+ if(miniBoss){
+  const m=miniBoss,x=m.x-cam,y=m.y-48;
+  circle(x,y+21,34,b.light+'20');
+  for(let i=0;i<6;i++){
+   let a=tick*.013+i*TAU/6;
+   rect(x+Math.cos(a)*29,y+24+Math.sin(a)*29,3,3,b.light);
+  }
+  rect(x-13,y+12,26,35,'#12131e');rect(x-16,y+11,32,6,b.near);
+  rect(x-8,y,16,22,m.inv>0&&tick%4<2?'#fff':b.light);
+  rect(x-5,y+10,4,3,'#14141f');rect(x+3,y+10,4,3,'#14141f');
+  for(let side of [-1,1]){
+   line(x+side*12,y+20,x+side*27,y+7,b.light,3);
+   line(x+side*9,y+38,x+side*19,y+50,b.near,4);
+  }
+  rect(x-22,y-9,44,3,'#090a15');rect(x-22,y-9,44*miniBoss.hp/miniBoss.max,3,b.light);
+ }
+}
+
 function platformY(x){let n=Math.floor(x/145),f=x-n*145;return (f>20&&f<110&&n%3!==0)?(n%2?G-55:G-75):null}
 function levelPlatforms(){
  if(p.vy<0)return;
@@ -268,14 +434,14 @@ function levelPlatforms(){
 }
 function update(){
  tick++;if(state!=='play')return;
- let st=stageId(),theme=biome(st),arenaStart=st*ZONE+630;
+ let st=stageId(),theme=biome(st),arenaStart=st*ZONE+ZONE-610;
  if(st!==zoneSeen){zoneSeen=st;document.getElementById('zoneLabel').textContent=(st+1)+' · '+theme.name;notif('МИР '+(st+1)+' · '+theme.name)}
- for(let j=0;j<4;j++)if(p.x>st*ZONE+[90,270,410,970][j])spawnEnemy(st,j);
+ for(let j=0;j<ENEMY_OFFSETS.length;j++)if(p.x>st*ZONE+ENEMY_OFFSETS[j]-100)spawnEnemy(st,j);
  if(!boss&&st>=defeated&&p.x>arenaStart+22)beginBoss(st);
  let go=(key.right?1:0)-(key.left?1:0);
  if(go)p.face=go;
- if(p.dash>0){p.dash--;p.vx=p.face*6.6;if(tick%2===0)particle(p.x+5,p.y+13,1,'#ddf5f3',.3)}
- else{p.vx+=(go*2.2-p.vx)*.25}
+ if(p.dash>0){p.dash--;p.vx=p.face*7.6;if(tick%2===0)particle(p.x+5,p.y+13,1,'#ddf5f3',.3)}
+ else{p.vx+=(go*2.65-p.vx)*.25}
  if(p.dashCd>0)p.dashCd--;
  if(press.dash&&p.dashCd<=0){p.dash=10;p.dashCd=65;p.vy=0;p.inv=Math.max(p.inv,11);sfx(340,.09,'sawtooth',.026);particle(p.x,p.y+10,14,'#d0d8ff')}
  if(press.jump&&p.jumps<2){p.vy=p.jumps===0?-6.9:-6.3;p.jumps++;p.ground=false;particle(p.x+6,p.y+22,10,theme.light);sfx(p.jumps===1?330:470,.09)}
@@ -284,7 +450,7 @@ function update(){
  levelPlatforms();
  if(p.y>H+30)damage(99,p.x-100);
  p.x=Math.max(0,p.x);
- if(gate&&boss){let l=boss.stage*ZONE+625,r=boss.stage*ZONE+1140;p.x=clamp(p.x,l+7,r-p.w-7)}
+ if(gate&&boss){let l=boss.stage*ZONE+ZONE-615,r=boss.stage*ZONE+ZONE-45;p.x=clamp(p.x,l+7,r-p.w-7)}
  if(p.attackCd>0)p.attackCd--;
  if(press.attack&&p.attackCd<=0){p.attack=13;p.attackCd=20;p.hitSet=new Set();sfx(470,.07,'triangle',.027);particle(p.x+p.face*14,p.y+9,5,'#e3d9bc',1)}
  if(p.attack>0){
@@ -292,6 +458,7 @@ function update(){
  let box={x:p.face>0?p.x+8:p.x-30,y:p.y-5,w:35,h:34};
  enemy.forEach(e=>{if(e.hp>0&&!p.hitSet.has(e)&&col(box,e)){hitEnemy(e);p.hitSet.add(e)}});
  if(boss&&!p.hitSet.has(boss)&&col(box,{x:boss.x-33,y:boss.y-75,w:68,h:74})){hitBoss(2);p.hitSet.add(boss)}
+  if(miniBoss&&!p.hitSet.has(miniBoss)&&col(box,{x:miniBoss.x-16,y:miniBoss.y-47,w:32,h:44})){hitMiniBoss();p.hitSet.add(miniBoss)}
  }
  if(p.inv>0)p.inv--;
  for(let i=enemy.length-1;i>=0;i--){
@@ -299,11 +466,11 @@ function update(){
  if(e.type===1){e.y=G-67+Math.sin(e.t*.045)*19;e.x+=Math.sin(e.t*.017)*.5+e.dir*.35}
  else{e.x+=e.dir*(e.type===2?.49:.7);if(Math.abs(e.x-e.base)>40)e.dir*=-1;e.y=G-e.h}
  if(col(p,e))damage(1,e.x+6);
- if(Math.abs(e.x-p.x)>780)enemy.splice(i,1);
+ if(Math.abs(e.x-p.x)>900)enemy.splice(i,1);
  }
  if(boss){
  let b=boss;b.t++;if(b.inv>0)b.inv--;b.phase=b.hp<b.max*.5?1:0;b.y=G-3+Math.sin(b.t*.035)*2;
- if(b.move>0){b.move--;b.x-=b.phase?3.8:2.8;if(b.x<b.stage*ZONE+700)b.move=0}
+ if(b.move>0){b.move--;b.x-=b.phase?3.4:2.6;if(b.x<b.stage*ZONE+ZONE-490)b.move=0}
  else b.x+=(b.home-b.x)*.016;
  if(b.attackCd>0)b.attackCd--;
  if(b.attackCd===32){b.warning=32}
@@ -318,8 +485,10 @@ function update(){
  if(col(p,{x:q.x-q.size/2,y:q.y-q.size/2,w:q.size,h:q.size})){damage(1,q.x);shots.splice(i,1)}
  }
  for(let i=particles.length-1;i>=0;i--){let q=particles[i];q.x+=q.vx;q.y+=q.vy;q.vy+=.07;q.vx*=.97;q.life--;if(q.life<=0)particles.splice(i,1)}
+ updateAdventure(st);
  if(shake>0)shake--;if(flash>0)flash--;if(noticeT>0)noticeT--;
  const target=Math.max(0,p.x-125);cam+=(target-cam)*.095;
+ document.getElementById('metaFill').style.width=Math.min(100,Math.max(0,(p.x%ZONE)/ZONE*100))+'%';
  Object.keys(press).forEach(k=>press[k]=0);
 }
 function sky(st){
@@ -358,7 +527,7 @@ function platforms(){
 function arena(){
  let first=Math.max(0,Math.floor(cam/ZONE)-1),last=first+2;
  for(let z=first;z<=last;z++){
-  let start=z*ZONE+625-cam,end=z*ZONE+1140-cam,b=biome(z);
+  let start=z*ZONE+ZONE-615-cam,end=z*ZONE+ZONE-45-cam,b=biome(z);
   if(end<0||start>W)continue;
   rect(start,G-126,8,126,b.stone);rect(end,G-126,8,126,b.stone);
   rect(start-6,G-130,20,7,b.light+'99');rect(end-6,G-130,20,7,b.light+'99');
@@ -466,7 +635,7 @@ function render(){
  if(!p){p=makePlayer(50)}
  let st=stageId(),shift=shake>0?Math.round((rnd(tick*1.7)-.5)*shake):0;
  ctx.save();ctx.translate(shift,Math.round((rnd(tick+2)-.5)*shake*.4));
- sky(st);ground(st);arena();platforms();
+ sky(st);ground(st);arena();platforms();drawAdventure(st);
  for(const e of enemy)if(e.hp>0)drawEnemy(e);
  drawBoss();drawShots();
  for(const q of particles){ctx.globalAlpha=clamp(q.life/20,0,1);rect(q.x-cam,q.y,2,2,q.c)}ctx.globalAlpha=1;
@@ -504,7 +673,7 @@ document.getElementById('fullBtn').addEventListener('click',async()=>{
  catch(e){shell.classList.toggle('fallback-full')}
 });
 document.addEventListener('fullscreenchange',()=>{document.getElementById('fullBtn').textContent=document.fullscreenElement?'⤢ ВЫЙТИ ИЗ ЭКРАНА':'⛶ НА ВЕСЬ ЭКРАН';if(!document.fullscreenElement)shell.classList.remove('fallback-full')});
-resetGame(true);
+resetGame(true);refreshContinueButton();
 })();
 </script>
 </body>
