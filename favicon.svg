@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<defs><radialGradient id="night"><stop stop-color="#22223c"/><stop offset="1" stop-color="#080b16"/></radialGradient><linearGradient id="a" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#fff3cc"/><stop offset=".55" stop-color="#e7c38c"/><stop offset="1" stop-color="#9b7cab"/></linearGradient></defs>
+<rect width="64" height="64" fill="url(#night)" rx="11"/>
+<rect x="4" y="4" width="56" height="56" rx="8" fill="none" stroke="#a28c7955" stroke-width="1"/>
+<circle cx="32" cy="31" r="21" fill="none" stroke="#e5c5a95c" stroke-width="2"/>
+<circle cx="32" cy="31" r="17" fill="none" stroke="#9b9ac17e" stroke-width="1"/>
+<path fill="url(#a)" d="M32 10a22 22 0 1 0 22 22 17 17 0 1 1-22-22z"/>
+<circle cx="34" cy="28" r="10" fill="#070a17"/>
+<circle cx="34" cy="28" r="5" fill="#1b2135"/>
+<path d="M32 7v9m0 33v8M7 32h9m33 0h8" stroke="#e7c898" stroke-width="2"/>
+<g fill="#f8eaca"><rect x="12" y="12" width="3" height="3"/><rect x="49" y="13" width="3" height="3"/><rect x="12" y="49" width="3" height="3"/><rect x="49" y="49" width="3" height="3"/></g>
+</svg>
