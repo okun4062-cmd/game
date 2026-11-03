@@ -109,20 +109,23 @@ export function createWorldScene(Phaser) {
    const canopy=[0x3e7653,0xc18a43,0x9bb6c7,0x4b8c75,0x9c4f51,0x8a735a,0x4b8a7b,0x477e9a,0x765c91,0x48a28c,0x8c929f,0x78566d];
    const light=[0x79a65d,0xe3b45b,0xc2d6df,0x78ac85,0xd77866,0xa38a6c,0x78b39f,0x71acc2,0xa68bc5,0x65c8a3,0xb9bdcf,0xb77da7];
    for(let x=10;x<this.world.width-8;){
-    const ti=Math.min(11,Math.floor(x/(this.world.width/12))),surface=this.world.surfaceHeights[x],g=this.add.graphics().setPosition(x*TILE,(surface-1)*TILE).setDepth(2),base=canopy[ti],hi=light[ti];
-    g.fillStyle(0x342c29);g.fillRect(-2,-43,5,45);g.fillStyle(0x534037);g.fillRect(-1,-38,2,31);g.fillRect(-1,-35,-11,11);g.fillRect(0,-32,12,9);
-    for(let row=0;row<5;row++)for(let col=-4;col<=4;col++){
-     const noise=(x*17+row*31+col*13+ti*7)%9,limit=row===0?2:row===1?4:row===2?4:row===3?3:2;
-     if(Math.abs(col)>limit||noise===0)continue;
-     const px=col*7,py=-72+row*8+(Math.abs(col)%2)*2;
-     g.fillStyle(noise%4===0?hi:base);g.fillRect(px,py,8,8);
-     if(noise%3===0){g.fillStyle(hi,.75);g.fillRect(px+1,py+1,3,2);}
+    const ti=Math.min(11,Math.floor(x/(this.world.width/12)));
+    if(Math.abs(x*TILE-this.player.x)>80){
+     const surface=this.world.surfaceHeights[x],g=this.add.graphics().setPosition(x*TILE,(surface-1)*TILE).setDepth(2),base=canopy[ti],hi=light[ti];
+     g.fillStyle(0x342c29);g.fillRect(-2,-43,5,45);g.fillStyle(0x534037);g.fillRect(-1,-38,2,31);g.fillRect(-11,-35,11,2);g.fillRect(0,-32,12,2);
+     for(let row=0;row<5;row++)for(let col=-4;col<=4;col++){
+      const noise=(x*17+row*31+col*13+ti*7)%9,limit=row===0?2:row===1?4:row===2?4:row===3?3:2;
+      if(Math.abs(col)>limit||noise===0)continue;
+      const px=col*7,py=-72+row*8+(Math.abs(col)%2)*2;
+      g.fillStyle=noise%4===0?hi:base;g.fillRect(px,py,8,8);
+      if(noise%3===0){g.fillStyle=hi;g.fillRect(px+1,py+1,3,2);}
+     }
+     g.fillStyle(0xf0df98,.9);if(ti===3||ti===6||ti===9)for(let n=0;n<3;n++)g.fillRect(-13+n*10,-43+(n%2)*8,2,2);
     }
-    g.fillStyle(0xf0df98,.9);if(ti===3||ti===6||ti===9)for(let n=0;n<3;n++)g.fillRect(-13+n*10,-43+(n%2)*8,2,2);
     x+=18+((x*17+ti*31)%13);
    }
    // Small plants soften the ground line and help the player read the scale of the world.
-   for(let x=6;x<this.world.width-6;x+=3){const surface=this.world.surfaceHeights[x],salt=(x*19)%17;if(salt>5)continue;const g=this.add.graphics().setPosition(x*TILE,surface*TILE).setDepth(2);g.fillStyle(salt%2?0x7da966:0x87b37a);g.fillRect(-2,-5,1,5);g.fillRect(1,-4,1,4);g.fillRect(2,-2,2,2);if(salt===0){g.fillStyle(0xdab67d);g.fillRect(-1,-7,2,2);}
+   for(let x=6;x<this.world.width-6;x+=3){const surface=this.world.surfaceHeights[x],salt=(x*19)%17;if(salt>5||Math.abs(x*TILE-this.player.x)<80)continue;const g=this.add.graphics().setPosition(x*TILE,surface*TILE).setDepth(2);g.fillStyle(salt%2?0x7da966:0x87b37a);g.fillRect(-2,-5,1,5);g.fillRect(1,-4,1,4);g.fillRect(2,-2,2,2);if(salt===0){g.fillStyle(0xdab67d);g.fillRect(-1,-7,2,2);}
    }
   }
   createEnemies(){
