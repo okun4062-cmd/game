@@ -1,0 +1,5 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import { SaveSystem } from '../src/systems/SaveSystem.js';
+test('roundTripsSave',()=>{const a=SaveSystem.load(null,'seed');a.clearedDungeons.push('dungeon-4');a.inventory.materials.ore=17;const b=SaveSystem.load(SaveSystem.serialize(a));assert.equal(b.seed,'seed');assert.deepEqual(b.clearedDungeons,['dungeon-4']);assert.equal(b.inventory.materials.ore,17);});
+test('migratesLegacyProgressAndEquipment',()=>{const s=SaveSystem.load(JSON.stringify({v:3,defeated:2,forge:{bag:{wood:9,copper:4,crystal:3,iron:7,ammo:18},owned:['copperRepeater'],gear:{weapon:'copperRepeater',armor:'cloth',pick:'hand'}}}));assert.equal(s.inventory.materials.wood,9);assert.equal(s.inventory.materials.ore,4);assert.equal(s.inventory.materials.iron,7);assert.equal(s.inventory.materials.crystal,3);assert.equal(s.inventory.items.ammo,18);assert.equal(s.inventory.items.pistol,1);assert.equal(s.inventory.equipped,'pistol');assert.equal(s.clearedDungeons.length,2);});
+test('invalidSaveFallsBackSafely',()=>{assert.equal(SaveSystem.load('{bad').version,1);assert.equal(SaveSystem.load(null).player.hp,100);});
+
