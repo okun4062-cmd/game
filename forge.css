@@ -135,3 +135,7 @@
  .forge-recipe-grid{grid-template-columns:1fr}
  .forge-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+/* The cave becomes an aiming space when a ranged weapon is equipped. */
+.shell.in-mine canvas{cursor:crosshair}
+@media(pointer:coarse){.shell.in-mine canvas{cursor:default}}
