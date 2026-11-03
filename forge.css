@@ -109,3 +109,29 @@
 .shell.in-mine .touch button[data-key="attack"]{border-color:#ffb9b9a8}
 .shell.in-mine .touch button[data-key="dig"]{background:#473d5cbf}
 @media(max-width:530px){.shell.in-mine .touch-right{max-width:145px}.shell.in-mine .touch button{width:35px;height:35px;padding:0;font-size:15px}}
+
+
+/* Inventory must remain fully usable in portrait mode instead of being clipped by the 16:9 canvas. */
+@media(max-width:760px){
+ .forge-panel{position:fixed;inset:0;z-index:1000;padding:max(10px,env(safe-area-inset-top)) max(7px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(7px,env(safe-area-inset-left))}
+ .forge-panel::before{inset:0}
+ .forge-card{width:min(100%,660px);height:min(90dvh,670px);min-height:0}
+ .forge-header{padding:12px 14px}
+ .forge-content{padding:13px;overscroll-behavior:contain}
+ .forge-tabs{padding:10px 13px 0}
+ .forge-tab{font-size:11px;padding:9px 11px}
+ .forge-recipe{padding:10px}
+ .forge-recipe h3{font-size:13px}
+ .forge-recipe small{font-size:10px}
+ .forge-recipe button{font-size:11px;padding:9px 6px}
+ .forge-recipe .cost{font-size:11px}
+ .forge-stats{gap:7px}
+ .forge-stat{padding:9px 6px}
+ .forge-stat strong{font-size:14px}
+ .forge-stat span{font-size:8px}
+}
+@media(max-width:410px){
+ .forge-card{height:min(92dvh,750px)}
+ .forge-recipe-grid{grid-template-columns:1fr}
+ .forge-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
