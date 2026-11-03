@@ -605,8 +605,8 @@ window.NocturneForge = function(e){
     ctx.fillStyle='#f8e2b4';ctx.font='bold 9px monospace';ctx.textBaseline='top';
     ctx.fillText('⛏  ГЛУБИНА: '+Math.max(0,Math.floor(p.y/TS)-9),14,14);
     ctx.fillText('⚒  КИРКА: '+pickTier()+'  ·  БЛОКОВ: '+stats.blocks,14,27);
-    const grotto=nearbyGrotto(p.x+p.w/2,p.y+p.h*.6);
-    if(grotto){ctx.fillStyle='#141321bd';ctx.fillRect(126,44,230,20);ctx.fillStyle='#ffe9b7';ctx.fillText('✦ ЖИЛА: '+names[grotto.g.ore]+' · F / ⛏',132,50)}
+    const currentGrotto=nearbyGrotto(p.x+p.w/2,p.y+p.h*.6);
+    if(currentGrotto){ctx.fillStyle='#141321bd';ctx.fillRect(126,44,230,20);ctx.fillStyle='#ffe9b7';ctx.fillText('✦ ЖИЛА: '+names[currentGrotto.g.ore]+' · F / ⛏',132,50)}
     ctx.fillStyle='#0c0c19b5';ctx.fillRect(105,H-30,270,23);
     ctx.fillStyle='#e8c998';ctx.font='bold 9px monospace';
     ctx.textAlign='center';ctx.fillText('F / ⛏  КОПАТЬ       S / ▼  ВНИЗ       E  ВЫХОД',240,H-22);
