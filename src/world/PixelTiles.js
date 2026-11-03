@@ -1,4 +1,4 @@
-import { TileId } from './generateWorld.js';
+import { TileId } from './generateWorld.js?v=20261103-physics1';
 
 const grass = ['#416d43', '#987643', '#8599aa', '#4d806e', '#944c4a', '#73604d', '#4d7b72', '#3d6780', '#705784', '#3c8b7a', '#777b8c', '#79566c'];
 const soil = ['#604535', '#795330', '#56616c', '#3b574a', '#713c3d', '#57453a', '#3e5952', '#3c5662', '#50405e', '#2f6658', '#4c515d', '#523a50'];
