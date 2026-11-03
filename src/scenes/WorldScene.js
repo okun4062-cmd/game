@@ -55,7 +55,7 @@ export function createWorldScene(Phaser) {
     for(let x=0;x<=width;x++){
      const exposed=x<width&&solid(x,y)&&!solid(x,y-1);
      if(exposed&&start<0)start=x;
-     if(!exposed&&start>=0){add((start+(x-1)/2+.5)*TILE,y*TILE+1,(x-start)*TILE,2);start=-1;}
+     if(!exposed&&start>=0){add((start+x)/2*TILE,y*TILE+1,(x-start)*TILE,2);start=-1;}
     }
    }
    for(let x=0;x<width;x++)for(const side of [-1,1]){
@@ -71,7 +71,7 @@ export function createWorldScene(Phaser) {
     for(let x=0;x<=width;x++){
      const exposed=x<width&&solid(x,y)&&!solid(x,y+1);
      if(exposed&&start<0)start=x;
-     if(!exposed&&start>=0){add((start+(x-1)/2+.5)*TILE,(y+1)*TILE-1,(x-start)*TILE,2);start=-1;}
+     if(!exposed&&start>=0){add((start+x)/2*TILE,(y+1)*TILE-1,(x-start)*TILE,2);start=-1;}
     }
    }
   }
