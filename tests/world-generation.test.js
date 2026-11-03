@@ -52,3 +52,13 @@ test('writesStayInsideBounds', () => {
     assert.ok(world.dungeons.every(d => d.x >= 0 && d.x < world.width && d.y >= 0 && d.y < world.height));
   }
 });
+
+test('hasMineableOreBesideConnectedCave', () => {
+  const world = generateWorld('ore-veins', { width: 720, height: 180 });
+  let found = false;
+  for (let y=0; y<world.height && !found; y++) for(let x=0;x<world.width && !found;x++) {
+    if(world.tiles[y*world.width+x]!==TileId.ORE) continue;
+    if([[x+1,y],[x-1,y],[x,y+1],[x,y-1]].some(([nx,ny])=>nx>=0&&ny>=0&&nx<world.width&&ny<world.height&&world.tiles[ny*world.width+nx]===TileId.AIR)) found=true;
+  }
+  assert.ok(found, 'ore should be exposed to a walkable connected cave so the pistol is craftable');
+});
