@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080914">
 <meta name="description" content="NOCTURNE II: Eclipse Edition — большие пиксельные миры, секреты, мини-боссы и легендарные стражи. Бесплатная браузерная игра.">
-<title>NOCTURNE II · Eclipse Edition — Бесконечные миры</title>
+<title>NOCTURNE III — Forge & The Deep · Бесконечная шахта</title>
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="stylesheet" href="./forge.css">
 <style>
 :root{color-scheme:dark;--bg:#070911;--edge:#343249;--gold:#eed5a1;--text:#e9e5de;--muted:#9b9bac}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}body{background:radial-gradient(ellipse at 50% -15%,#25223f 0,transparent 55%),#080914;overscroll-behavior:none}button{font:inherit;cursor:pointer}button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
@@ -124,29 +125,45 @@ footer{margin-top:25px;border-top:0;letter-spacing:.1em;color:#9992a9}
 <body>
 <main>
  <header class="head">
-  <div class="brand-stack"><div class="brand-sigil" aria-hidden="true"></div><div><div class="mark">N<span style="color:#f0d9a6">Ø</span>CTURNE <em>Ⅱ</em></div><div class="sup">ECLIPSE EDITION · INFINITE REALMS</div></div></div>
-  <div class="head-side"><div class="top-right-note">ИСКУССТВО ТЁМНЫХ КОРОЛЕВСТВ</div><button class="chip" id="soundBtn" aria-label="Звук">♫ ЗВУК: ВЫКЛ</button><button class="chip" id="fullBtn">⛶ ПОЛНЫЙ ЭКРАН</button></div>
+  <div class="brand-stack"><div class="brand-sigil" aria-hidden="true"></div><div><div class="mark">N<span style="color:#f0d9a6">Ø</span>CTURNE <em>Ⅱ</em></div><div class="sup">THE FORGE & THE DEEP · INFINITE REALMS</div></div></div>
+  <div class="head-side"><div class="top-right-note">ШАХТЫ · БРОНЯ · КРАФТ</div><button class="chip" id="soundBtn" aria-label="Звук">♫ ЗВУК: ВЫКЛ</button><button class="chip" id="fullBtn">⛶ ПОЛНЫЙ ЭКРАН</button></div>
  </header>
- <div class="edition-banner"><span>VOL. 02 <span style="opacity:.5;margin:0 6px">/</span> БЕСКОНЕЧНОЕ ПУТЕШЕСТВИЕ</span><span>12 ЛЕГЕНДАРНЫХ СТРАЖЕЙ · ∞ МИРОВ</span></div>
+ <nav class="forge-tools" aria-label="Снаряжение, шахта и крафт">
+ <button class="chip hot" id="forgeMine"><b>⛏</b><span>В шахту</span></button>
+ <button class="chip" id="forgeInventory"><b>▣</b><span>Инвентарь</span></button>
+ <button class="chip" id="forgeCraft"><b>⚒</b><span>Крафт</span></button>
+ <button class="chip" id="forgeTonic"><b>🧪</b><span>Зелье · R</span></button>
+ <div class="forge-status" id="forgeStatus">⚔ 2 · 🛡 0 · ⛏ 1</div>
+ </nav>
+ <div class="edition-banner"><span>VOL. 03 <span style="opacity:.5;margin:0 6px">/</span> БЕСКОНЕЧНОЕ ПУТЕШЕСТВИЕ</span><span>ШАХТА ∞ · КУЗНИЦА · БОССЫ</span></div>
  <section class="shell" id="shell" aria-label="Игровое поле">
    <canvas id="screen" width="480" height="270" aria-label="Бесконечная игра"></canvas>
-   <div class="floating-controls"><button id="exitFullBtn" title="Войти / выйти из полного экрана" aria-label="Переключить полный экран">⛶</button><button id="pauseBtn" title="Пауза" aria-label="Пауза">Ⅱ</button></div>
+   <div class="floating-controls"><button id="forgeHudMine" title="Шахта">⛏</button><button id="forgeHudBag" title="Инвентарь">▣</button><button id="exitFullBtn" title="Войти / выйти из полного экрана" aria-label="Переключить полный экран">⛶</button><button id="pauseBtn" title="Пауза" aria-label="Пауза">Ⅱ</button></div>
    <div class="touch" id="touch">
     <div class="touch-left"><button data-key="left" aria-label="Влево">◀</button><button data-key="right" aria-label="Вправо">▶</button></div>
-    <div class="touch-right"><button data-key="dash" aria-label="Рывок">◆</button><button data-key="attack" aria-label="Атака">⚔</button><button data-key="jump" aria-label="Прыжок">↑</button></div>
+    <div class="touch-right"><button data-key="dash" aria-label="Рывок">◆</button><button data-key="attack" aria-label="Атака">⚔</button><button data-key="jump" aria-label="Прыжок">↑</button><button data-key="dig" class="forge-touch-btn" aria-label="Копать">⛏</button><button data-key="down" class="forge-touch-btn" aria-label="Копать вниз">▼</button></div>
    </div>
    <div class="overlay" id="overlay">
     <div class="menu-card">
       <div class="orn" id="subTitle">ДРЕВНИЕ МИРЫ ПРОБУЖДАЮТСЯ</div>
       <h1 id="overTitle">ПО ТУ СТОРОНУ <span>СВЕТА</span></h1>
-      <p id="overText">Бесконечная пиксельная одиссея. Исследуй древние руины и секреты, собери осколки света, одолей проклятых стражей. Каждый мир — новая история.</p>
+      <p id="overText">Огромная шахта, бесчисленные рудные жилы и тайники, кузница оружия, брони и кирок. Исследуй, прокачивайся, сражайся: каждый следующий босс опаснее предыдущего.</p>
       <button id="startBtn" class="primary">НОВОЕ ПРИКЛЮЧЕНИЕ →</button>
       <button id="continueBtn">ПРОДОЛЖИТЬ СОХРАНЕНИЕ ↗</button>
-      <div class="menu-meta"><span>12 МИРОВ</span><span>МИНИ-БОССЫ</span><span>ТАЙНИКИ</span><span>СОХРАНЕНИЯ</span></div>
+      <div class="menu-meta"><span>12 МИРОВ</span><span>ШАХТА ∞</span><span>ОРУЖИЕ И БРОНЯ</span><span>КРАФТ</span></div>
       <div class="legend"><span>← → / A D — движение</span><span>SPACE — двойной прыжок</span><span>J / X — удар</span><span>SHIFT — рывок</span><span>ESC — пауза</span></div>
     </div>
    </div>
- </section>
+  <div class="forge-portal-hint" id="forgePortalHint" hidden>E · В шахту · F копать</div>
+   <div class="mine-hint" id="mineHint">⛏ ШАХТА · F копать · S вниз · E выход</div>
+   <div class="forge-panel" id="forgePanel" hidden>
+    <section class="forge-card" role="dialog" aria-label="Инвентарь и кузница">
+      <header class="forge-header"><div><div class="forge-eyebrow">NOCTURNE III / FORGE & THE DEEP</div><h2>ИНВЕНТАРЬ И КУЗНИЦА</h2></div><button id="forgeClose" class="forge-close" aria-label="Закрыть">✕</button></header>
+      <div class="forge-tabs"><button class="forge-tab active" data-tab="recipes">⚒ КРАФТ</button><button class="forge-tab" data-tab="bag">▣ СУМКА</button><button class="forge-tab" data-tab="guide">⛏ ШАХТА / ПОМОЩЬ</button></div>
+      <div id="forgeGrid" class="forge-content"></div>
+    </section>
+   </div>
+  </section>
  <div class="info"><span><strong id="zoneLabel">I · ЗАБЫТЫЕ ВРАТА</strong> — следуй за светом, открой легенды</span><span class="progress-wrap">ПУТЬ <span id="metaProgress"><span id="metaFill"></span></span></span><span class="kbd">A/D · SPACE · J · SHIFT · ESC</span><span id="record">РЕКОРД: 0</span></div>
  <div class="features">
   <article class="feature"><div class="number">01 / МИРЫ</div><h3>Дальше, чем горизонт</h3><p>12 разных атмосфeр, гигантские локации и бесконечное странствие.</p></article>
@@ -155,6 +172,7 @@ footer{margin-top:25px;border-top:0;letter-spacing:.1em;color:#9992a9}
  </div>
  <footer><span>© NOCTURNE / ECLIPSE EDITION</span><span>СОЗДАНО ДЛЯ БРАУЗЕРА · УПРАВЛЕНИЕ НА ТЕЛЕФОНЕ · БЕЗ УСТАНОВКИ</span></footer>
 </main>
+<script src="./forge.js"></script>
 <script>
 (function(){
 'use strict';
@@ -176,8 +194,9 @@ const stages=[
  {name:'ПУСТОЙ ТРОН',boss:'КОРОЛЬ ЗАТМЕНИЯ',sky:'#190f24',far:'#3b1f4b',near:'#5e3463',stone:'#4e3354',light:'#ee98ff',kind:10,mode:1},
  {name:'СЕРДЦЕ БЕЗДНЫ',boss:'ПОЖИРАТЕЛЬ МИРОВ',sky:'#080d1d',far:'#151e3c',near:'#253663',stone:'#303653',light:'#fff3c0',kind:11,mode:2}
 ];
-const key={left:0,right:0,jump:0,attack:0,dash:0},press={jump:0,attack:0,dash:0};
+const key={left:0,right:0,jump:0,attack:0,dash:0,dig:0,down:0},press={jump:0,attack:0,dash:0,dig:0};
 let state='menu',p,enemy=[],shots=[],particles=[],boss=null,gate=false,spawned=new Set(),defeated=0,record=0,cam=0,tick=0,shake=0,flash=0,combo=0,zoneSeen=-1,anim=0,last=0,acc=0,sound=false,ac=null,notice='',noticeT=0,clearStage=-1;
+let forge=null;
 const SAVE_KEY='nocturne-eclipse-save-v2';
 const ENEMY_OFFSETS=[200,380,570,760,940,1160,1330,1510,1720,1900,2080,2290,2500,2670];
 let checkpointX=52, relics=0, miniBoss=null, secretsFound=new Set(), collected=new Set(), miniDone=new Set();
@@ -186,11 +205,11 @@ try{savedData=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){}
 const continueBtn=document.getElementById('continueBtn');
 function saveGame(){
  if(!p)return;
- try{const v={v:2,defeated,checkpointX,relics,miniDone:[...miniDone],collected:[...collected],secrets:[...secretsFound]};
+ try{const v={v:3,defeated,checkpointX,relics,miniDone:[...miniDone],collected:[...collected],secrets:[...secretsFound],forge:forge?forge.snapshot():null};
  localStorage.setItem(SAVE_KEY,JSON.stringify(v));savedData=v;refreshContinueButton();}catch(e){}
 }
 function refreshContinueButton(){
- continueBtn.classList.toggle('show',!!savedData&&(savedData.checkpointX>52||savedData.defeated>0||savedData.relics>0));
+ continueBtn.classList.toggle('show',!!savedData&&(savedData.checkpointX>52||savedData.defeated>0||savedData.relics>0||savedData.forge?.blocks>0||savedData.forge?.xp>0));
 }
 function resumeSave(){
  if(!savedData)return;
@@ -199,7 +218,7 @@ function resumeSave(){
  relics=Math.max(0,Number(savedData.relics)||0);
  miniDone=new Set(savedData.miniDone||[]);collected=new Set(savedData.collected||[]);secretsFound=new Set(savedData.secrets||[]);
  spawned.clear();
- resetGame(false);state='play';overlay.hidden=true;last=0;acc=0;
+ resetGame(false);if(forge){forge.restore(savedData.forge);p.max=6+Math.floor(forge.armorValue()*.75);p.hp=p.max;}state='play';overlay.hidden=true;last=0;acc=0;
  if(!anim)anim=requestAnimationFrame(loop);
 }
 continueBtn.addEventListener('click',resumeSave);
@@ -231,6 +250,7 @@ function resetGame(fromStart){
  const pos=fromStart?52:Math.max(defeated*ZONE+52,checkpointX);
  p=makePlayer(pos);cam=Math.max(0,p.x-125);enemy=[];shots=[];particles=[];boss=null;
  gate=false;miniBoss=null;zoneSeen=-1;shake=0;flash=0;tick=0;combo=0;
+ if(forge){forge.onReset(fromStart);p.max=6+Math.floor(forge.armorValue()*.75);p.hp=p.max;}
  Object.keys(key).forEach(k=>key[k]=0);
  Object.keys(press).forEach(k=>press[k]=0);
  render();
@@ -250,7 +270,7 @@ function pause(){
  setOverlay('ПРИОСТАНОВЛЕНО','ПАУЗА','Стражи не исчезнут. Продолжай, когда будешь готов.','ПРОДОЛЖИТЬ →');
 }
 function die(){
- if(state!=='play')return;state='dead';sfx(95,.35,'sawtooth',.08);
+ if(state!=='play')return;if(forge)forge.beforeDeath();state='dead';sfx(95,.35,'sawtooth',.08);
  setOverlay('ПУТЬ НЕ ОКОНЧЕН','ТЫ ПАЛ','Побеждённых стражей: '+defeated+'. Возродись у последнего рубежа и попробуй снова.','ВОЗРОДИТЬСЯ ↻');
 }
 function winBoss(){
@@ -262,14 +282,14 @@ function winBoss(){
  checkpointX=defeated*ZONE+52;
  p.hp=Math.min(p.max,p.hp+3);p.inv=90;combo=0;
  if(defeated>record){record=defeated;try{localStorage.setItem('nocturne-best',record)}catch(e){}document.getElementById('record').textContent='РЕКОРД: '+record}
- notif('✦ СТРАЖ ПОВЕРЖЕН · '+defeated+' / ∞ ✦');saveGame();
+ if(forge)forge.bossDrops(idx);notif('✦ СТРАЖ ПОВЕРЖЕН · '+defeated+' / ∞ ✦');saveGame();
 }
-function damage(amount,x){if(p.inv>0||p.dash>0||state!=='play')return;p.hp-=amount;p.inv=75;p.vy=-3.6;p.vx=x<p.x?2.5:-2.5;shake=9;flash=8;combo=0;particle(p.x+6,p.y+9,18,'#ff7f90',2);sfx(110,.2,'sawtooth');if(p.hp<=0)die()}
+function damage(amount,x,bossLevel=null){if(p.inv>0||p.dash>0||state!=='play')return;const incoming=forge?(bossLevel===null?Math.max(1,amount-Math.floor(forge.armorValue()*.5)):forge.effectiveBossDamage(amount,bossLevel)):amount;p.hp-=incoming;p.inv=75;p.vy=-3.6;p.vx=x<p.x?2.5:-2.5;shake=9;flash=8;combo=0;particle(p.x+6,p.y+9,18,'#ff7f90',2);sfx(110,.2,'sawtooth');if(p.hp<=0)die()}
 function hitBoss(dmg){if(!boss||boss.inv>0)return;boss.hp-=dmg;boss.inv=9;boss.stagger+=dmg;particle(boss.x,boss.y-30,15,boss.theme.light,2.7);sfx(160+Math.random()*110,.075,'square',.02);shake=4;if(boss.hp<=0)winBoss()}
-function hitEnemy(e){if(e.inv>0)return;e.hp--;e.inv=12;e.vx=p.face*3;particle(e.x+6,e.y+7,9,e.color,1.9);sfx(250,.07);if(e.hp<=0){particle(e.x,e.y,15,e.color,2);combo++;if(combo%5===0)p.hp=Math.min(p.max,p.hp+1)}}
+function hitEnemy(e){if(e.inv>0)return;e.hp-=Math.max(1,Math.ceil((forge?forge.weaponDamage():2)/5));e.inv=12;e.vx=p.face*3;particle(e.x+6,e.y+7,9,e.color,1.9);sfx(250,.07);if(e.hp<=0){if(forge)forge.surfaceResourceDrops(e.type,stageId());particle(e.x,e.y,15,e.color,2);combo++;if(combo%5===0)p.hp=Math.min(p.max,p.hp+1)}}
 function beginBoss(i){
  const theme=biome(i),x=i*ZONE+ZONE-245;
- const hp=Math.min(62,24+(i%12)*2+Math.floor(i/12)*3);
+ const hp=Math.round(32+i*10+Math.pow(i,1.19)*2);
  boss={stage:i,theme,x,home:x,y:G-3,w:72,h:79,hp,max:hp,inv:0,t:0,phase:0,attackCd:95,warning:0,move:0,dir:-1,stagger:0};
  gate=true;shots=[];shake=8;sfx(70,.5,'sawtooth',.08);notif('⚔ '+theme.boss+' ⚔');
 }
@@ -280,7 +300,7 @@ function spawnEnemy(st,j){
  enemy.push({x,y:type===1?G-76:G-16,w:type===2?20:14,h:type===1?14:16,
   hp:type===2?3:2,inv:0,base:x,vx:0,vy:0,dir:j%2?1:-1,t:rnd(st*23+j)*100,type,color});
 }
-function makeShot(x,y,vx,vy,kind=0,c='#f4c68c',size=4){shots.push({x,y,vx,vy,kind,c,size,life:200});if(shots.length>90)shots.shift()}
+function makeShot(x,y,vx,vy,kind=0,c='#f4c68c',size=4){shots.push({x,y,vx,vy,kind,c,size,life:200,stage:boss?boss.stage:null});if(shots.length>90)shots.shift()}
 function aim(x,y,speed,spread=0){
  let dx=p.x+6-x,dy=p.y+10-y,len=Math.hypot(dx,dy)||1,ang=Math.atan2(dy,dx)+spread;
  makeShot(x,y,Math.cos(ang)*speed,Math.sin(ang)*speed,0,boss.theme.light,4);
@@ -439,7 +459,7 @@ function hitMiniBoss(){
  if(!miniBoss||miniBoss.inv>0)return;
  miniBoss.hp-=2;miniBoss.inv=11;particle(miniBoss.x,miniBoss.y-25,14,biome(miniBoss.stage).light,2);
  sfx(260,.07,'square',.02);shake=4;
- if(miniBoss.hp<=0){
+ if(miniBoss.hp<=0){if(forge)forge.eliteDrops(miniBoss.stage);
   const st=miniBoss.stage;miniDone.add(st);relics+=4;
   particle(miniBoss.x,miniBoss.y-25,85,biome(st).light,3);
   p.hp=Math.min(p.max,p.hp+2);notif('✦ ЭЛИТНЫЙ СТРАЖ ПОВЕРЖЕН · +4 ОСКОЛКА');
@@ -513,6 +533,8 @@ function levelPlatforms(){
 }
 function update(){
  tick++;if(state!=='play')return;
+ if(forge?.inventoryOpen){Object.keys(press).forEach(k=>press[k]=0);return}
+ if(forge?.inMine){forge.updateMine();Object.keys(press).forEach(k=>press[k]=0);return}
  let st=stageId(),theme=biome(st),arenaStart=st*ZONE+ZONE-610;
  if(st!==zoneSeen){zoneSeen=st;document.getElementById('zoneLabel').textContent=(st+1)+' · '+theme.name;notif('МИР '+(st+1)+' · '+theme.name)}
  for(let j=0;j<ENEMY_OFFSETS.length;j++)if(p.x>st*ZONE+ENEMY_OFFSETS[j]-100)spawnEnemy(st,j);
@@ -536,7 +558,7 @@ function update(){
  p.attack--;
  let box={x:p.face>0?p.x+8:p.x-30,y:p.y-5,w:35,h:34};
  enemy.forEach(e=>{if(e.hp>0&&!p.hitSet.has(e)&&col(box,e)){hitEnemy(e);p.hitSet.add(e)}});
- if(boss&&!p.hitSet.has(boss)&&col(box,{x:boss.x-33,y:boss.y-75,w:68,h:74})){hitBoss(2);p.hitSet.add(boss)}
+ if(boss&&!p.hitSet.has(boss)&&col(box,{x:boss.x-33,y:boss.y-75,w:68,h:74})){hitBoss(forge?forge.weaponDamage():2);p.hitSet.add(boss)}
   if(miniBoss&&!p.hitSet.has(miniBoss)&&col(box,{x:miniBoss.x-16,y:miniBoss.y-47,w:32,h:44})){hitMiniBoss();p.hitSet.add(miniBoss)}
  }
  if(p.inv>0)p.inv--;
@@ -555,16 +577,16 @@ function update(){
  if(b.attackCd===32){b.warning=32}
  if(b.warning>0)b.warning--;
  if(b.attackCd<=0){bossFire();b.attackCd=b.phase?97:150;if(b.phase||b.theme.kind%2===0)b.move=25}
- if(col(p,{x:b.x-25,y:b.y-65,w:51,h:62}))damage(1,b.x);
+ if(col(p,{x:b.x-25,y:b.y-65,w:51,h:62}))damage(1,b.x,b.stage);
  }
  for(let i=shots.length-1;i>=0;i--){let q=shots[i];q.x+=q.vx;q.y+=q.vy;q.life--;
  if(q.kind===1){q.y=G-8;q.vx*=.997}
  if(q.kind===2&&q.y>=G-7)q.life=0;
  if(q.life<=0||Math.abs(q.x-p.x)>650){shots.splice(i,1);continue}
- if(col(p,{x:q.x-q.size/2,y:q.y-q.size/2,w:q.size,h:q.size})){damage(1,q.x);shots.splice(i,1)}
+ if(col(p,{x:q.x-q.size/2,y:q.y-q.size/2,w:q.size,h:q.size})){damage(1,q.x,q.stage);shots.splice(i,1)}
  }
  for(let i=particles.length-1;i>=0;i--){let q=particles[i];q.x+=q.vx;q.y+=q.vy;q.vy+=.07;q.vx*=.97;q.life--;if(q.life<=0)particles.splice(i,1)}
- updateAdventure(st);
+ updateAdventure(st);if(forge)forge.surfaceTicks();
  if(shake>0)shake--;if(flash>0)flash--;if(noticeT>0)noticeT--;
  const target=Math.max(0,p.x-125);cam+=(target-cam)*.095;
  document.getElementById('metaFill').style.width=Math.min(100,Math.max(0,(p.x%ZONE)/ZONE*100))+'%';
@@ -1010,9 +1032,10 @@ function hud(){
 }
 function render(){
  if(!p){p=makePlayer(50)}
+ if(forge?.inMine){forge.drawMine();return}
  let st=stageId(),shift=shake>0?Math.round((rnd(tick*1.7)-.5)*shake):0;
  ctx.save();ctx.translate(shift,Math.round((rnd(tick+2)-.5)*shake*.4));
- sky(st);ground(st);drawPits(st);arena();platforms();drawAdventure(st);
+ sky(st);ground(st);drawPits(st);arena();platforms();drawAdventure(st);if(forge)forge.drawWorld();
  for(const e of enemy)if(e.hp>0)drawEnemy(e);
  drawBoss();drawShots();
  for(const q of particles){ctx.globalAlpha=clamp(q.life/20,0,1);rect(q.x-cam,q.y,2,2,q.c)}ctx.globalAlpha=1;
@@ -1027,8 +1050,10 @@ function loop(ms){
  render();anim=requestAnimationFrame(loop);
 }
 function bind(k,v){if(!(k in key))return;if(v&&!key[k]&&k in press)press[k]=1;key[k]=v?1:0}
-const keys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'jump',KeyW:'jump',Space:'jump',KeyZ:'jump',KeyJ:'attack',KeyX:'attack',KeyK:'attack',ShiftLeft:'dash',ShiftRight:'dash',KeyC:'dash'};
+const keys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',KeyW:'jump',Space:'jump',KeyZ:'jump',KeyJ:'attack',KeyX:'attack',KeyK:'attack',ShiftLeft:'dash',ShiftRight:'dash',KeyC:'dash',KeyF:'dig',KeyS:'down',ArrowDown:'down'};
 window.addEventListener('keydown',e=>{
+ if(forge?.inventoryOpen){if(forge.onHotkey(e.code)){e.preventDefault();return}e.preventDefault();return}
+ if(forge?.onHotkey(e.code)){e.preventDefault();return}
  if(e.code==='Escape'||e.code==='KeyP'){if(state==='play')pause();else if(state==='pause')start();e.preventDefault();return}
  if(e.code==='Enter'&&state!=='play'){start();e.preventDefault();return}
  let k=keys[e.code];if(k&&state==='play'){if(!e.repeat)bind(k,1);e.preventDefault()}
@@ -1051,6 +1076,11 @@ document.getElementById('fullBtn').addEventListener('click',async()=>{
  catch(e){shell.classList.toggle('fallback-full')}
 });
 document.addEventListener('fullscreenchange',()=>{document.getElementById('fullBtn').textContent=document.fullscreenElement?'⤢ ВЫЙТИ ИЗ ЭКРАНА':'⛶ НА ВЕСЬ ЭКРАН';if(!document.fullscreenElement)shell.classList.remove('fallback-full')});
+forge=window.NocturneForge({
+ W,H,G,ZONE,ctx,keys:key,pressed:press,biome,player:()=>p,mode:()=>state,tick:()=>tick,stageId,
+ camera:()=>cam,setCamera:(v)=>{cam=v},defeated:()=>defeated,bossActive:()=>!!boss,
+ rect,circle,line,drawPlayer,particle,damage,notif,sfx,save:saveGame,start,clamp
+});
 resetGame(true);refreshContinueButton();
 })();
 </script>
