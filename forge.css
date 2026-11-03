@@ -1,0 +1,102 @@
+/* NOCTURNE III · THE FORGE & THE DEEP */
+.forge-tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 13px;align-items:center}
+.forge-tools .chip{min-height:42px;border-radius:7px;display:inline-flex;gap:9px;align-items:center}
+.forge-tools .chip b{color:#f6ddaa;font-size:15px}
+.forge-tools .chip.hot{border:1px solid #f0c783b8;box-shadow:inset 0 0 25px #e8bc6220,0 5px 30px #c8a97410}
+.forge-tools .chip span{font-size:12px;letter-spacing:.07em}
+.forge-status{margin-left:auto;font-size:11px;letter-spacing:.1em;color:#cabda9}
+.forge-status strong{color:#ffdda2}
+.forge-portal-hint{position:absolute;left:50%;top:24%;transform:translateX(-50%);
+ border:1px solid #e9d3a879;background:#100f20e3;backdrop-filter:blur(12px);z-index:4;
+ border-radius:7px;padding:10px 15px;color:#f5e1ba;text-align:center;font-size:12px;
+ letter-spacing:.09em;pointer-events:none;text-shadow:0 1px 10px #070615;min-width:205px}
+.forge-portal-hint[hidden]{display:none}
+.forge-panel{position:absolute;inset:13px;z-index:12;display:flex;align-items:center;justify-content:center;pointer-events:auto}
+.forge-panel[hidden]{display:none}
+.forge-panel::before{content:"";position:absolute;inset:-15px;background:#040611d9;backdrop-filter:blur(10px)}
+.forge-card{position:relative;width:min(970px,98%);height:min(92%,530px);min-height:220px;overflow:hidden;
+ border:1px solid #e2c6908a;border-radius:12px;background:
+ radial-gradient(ellipse at 80% -30%,#57426540,transparent 65%),
+ linear-gradient(135deg,#171b30,#080c1b 65%,#171322);
+ box-shadow:0 0 0 5px #16101a,0 0 85px #000c;display:flex;flex-direction:column}
+.forge-header{padding:17px 19px 11px;display:flex;justify-content:space-between;align-items:center;gap:10px;
+ border-bottom:1px solid #9485aa46;background:#15172c88}
+.forge-header .forge-eyebrow{font:700 10px/1 monospace;color:#d0b77f;letter-spacing:.25em}
+.forge-header h2{font:700 clamp(18px,2.4vw,28px)/1 Georgia,serif;letter-spacing:.08em;margin:5px 0 0;color:#faf0df}
+.forge-close{height:34px;width:34px;border:1px solid #a9928c8a;border-radius:6px;background:#1d1b32;color:white;font-size:19px}
+.forge-tabs{display:flex;gap:8px;padding:12px 19px 0;flex-wrap:wrap}
+.forge-tab{background:#171b32;border:1px solid #7c748259;color:#d5ced9;border-radius:6px;
+ font-weight:700;font-size:11px;letter-spacing:.06em;padding:9px 13px}
+.forge-tab.active{background:#e9ce9d;color:#161321;border-color:#f7dea9}
+.forge-content{padding:14px 19px 20px;overflow:auto;min-height:0;scrollbar-color:#d6b688 #201e2e;flex:1}
+.forge-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-bottom:13px}
+.forge-stat{padding:8px 9px;border:1px solid #8d819956;background:#0c1121a9;border-radius:7px}
+.forge-stat span{display:block;color:#adaac3;font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+.forge-stat strong{font-size:15px;color:#ffe2ab}
+.forge-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.forge-item{padding:10px;border:1px solid #706c8c75;border-radius:8px;background:linear-gradient(160deg,#222438aa,#13182aac);
+ display:flex;gap:8px;align-items:center}
+.forge-item .symbol{font-size:24px;min-width:30px;text-align:center;filter:drop-shadow(0 0 8px #ffe39c33)}
+.forge-item .title{font-size:11px;font-weight:800;color:#f2ebdc}
+.forge-item .amount{font-size:10px;color:#c5b3a5}
+.forge-recipe-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.forge-recipe{padding:11px 12px;background:#17192cb3;border:1px solid #685a7469;border-radius:8px}
+.forge-recipe-top{display:flex;align-items:center;gap:10px}
+.forge-recipe-icon{font-size:30px;filter:drop-shadow(0 0 9px #e4cc9855)}
+.forge-recipe h3{margin:0;font-size:13px;color:#fff0cf}
+.forge-recipe small{font-size:10px;line-height:1.4;color:#afb2c6}
+.forge-recipe .cost{display:block;font-size:11px;line-height:1.5;margin:9px 0;color:#d4c4a4}
+.forge-recipe button{width:100%;border:1px solid #c3a16f;background:#e4c693;color:#181824;
+ border-radius:5px;font-size:11px;font-weight:900;padding:9px;letter-spacing:.07em}
+.forge-recipe button:disabled{background:#202638;color:#888ca6;border-color:#3c3b54;cursor:not-allowed}
+.forge-recipe button:not(:disabled):hover{background:#ffe4ad}
+.forge-log{font:11px/1.55 monospace;color:#b7b5c9;margin:12px 0 0;padding:10px;border:1px solid #62567955;border-radius:7px}
+.forge-tip{font:11px/1.5 monospace;color:#b8b2ce;margin:0 0 14px}
+.mine-hint{position:absolute;left:50%;transform:translateX(-50%);top:11px;z-index:4;background:#090a17ce;
+ border:1px solid #c7b28e66;padding:7px 12px;border-radius:5px;display:none;color:#f3dbad;
+ white-space:nowrap;font:11px/1.2 monospace;pointer-events:none}
+.shell.in-mine .mine-hint{display:block}
+.mine-progress{height:5px;background:#494458;border-radius:4px;overflow:hidden;margin-top:6px}
+.mine-progress div{height:100%;background:#f1cf94;width:0%;transition:width .12s}
+.forge-touch-btn{border-color:#dca8ff80!important;color:#fff0d2!important}
+.forge-notice{color:#f1c989;font-size:12px;margin-top:9px;min-height:18px}
+@media(max-width:760px){
+ .forge-status{display:none}
+ .forge-tools{gap:5px;margin:7px 2px 11px}
+ .forge-tools .chip{min-height:33px;font-size:9px;padding:0 7px;gap:4px}
+ .forge-tools .chip span{font-size:10px}
+ .forge-card{width:99%;height:98%;border-radius:7px}
+ .forge-header{padding:8px 9px}
+ .forge-header h2{font-size:17px;margin-top:4px}
+ .forge-header .forge-eyebrow{font-size:8px}
+ .forge-tabs{gap:5px;padding:7px 9px 0}
+ .forge-tab{font-size:9px;padding:6px 8px}
+ .forge-content{padding:8px}
+ .forge-stats{gap:4px;margin-bottom:7px}
+ .forge-stat{padding:5px 4px}
+ .forge-stat strong{font-size:11px}
+ .forge-stat span{font-size:7px}
+ .forge-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ .forge-item{padding:5px;gap:3px}
+ .forge-item .symbol{min-width:19px;font-size:16px}
+ .forge-item .title{font-size:9px}
+ .forge-item .amount{font-size:8px}
+ .forge-recipe-grid{gap:5px}
+ .forge-recipe{padding:7px}
+ .forge-recipe-icon{font-size:19px}
+ .forge-recipe h3{font-size:10px}
+ .forge-recipe small{font-size:9px}
+ .forge-recipe .cost{margin:5px 0;font-size:9px}
+ .forge-recipe button{padding:7px 3px;font-size:9px}
+ .forge-tip{font-size:9px;margin-bottom:5px}
+ .mine-hint{font-size:8px;top:6px}
+}
+@media(max-width:480px){
+ .forge-card{height:100%}
+ .forge-panel{inset:3px}
+ .forge-stats{grid-template-columns:repeat(5,minmax(0,1fr))}
+ .forge-tab{padding:5px 6px}
+ .forge-recipe-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .forge-recipe h3{font-size:9px}
+ .forge-item{flex-direction:column;text-align:center}
+}
