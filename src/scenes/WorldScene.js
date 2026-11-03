@@ -119,8 +119,8 @@ export function createWorldScene(Phaser) {
       const noise=(x*17+row*31+col*13+ti*7)%9,limit=row===0?2:row===1?4:row===2?4:row===3?3:2;
       if(Math.abs(col)>limit||noise===0)continue;
       const px=col*7,py=-72+row*8+(Math.abs(col)%2)*2;
-      g.fillStyle=noise%4===0?hi:base;g.fillRect(px,py,8,8);
-      if(noise%3===0){g.fillStyle=hi;g.fillRect(px+1,py+1,3,2);}
+      g.fillStyle(noise%4===0?hi:base);g.fillRect(px,py,8,8);
+      if(noise%3===0){g.fillStyle(hi);g.fillRect(px+1,py+1,3,2);}
      }
      g.fillStyle(0xf0df98,.9);if(ti===3||ti===6||ti===9)for(let n=0;n<3;n++)g.fillRect(-13+n*10,-43+(n%2)*8,2,2);
     }
