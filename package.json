@@ -1,0 +1,6 @@
+{
+  "name": "nocturne-phaser-world",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test" }
+}
