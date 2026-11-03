@@ -1,5 +1,5 @@
 import { createBootScene } from './scenes/BootScene.js';
-import { createWorldScene } from './scenes/WorldScene.js?v=20261103-physics5';
+import { createWorldScene } from './scenes/WorldScene.js?v=20261103-ui1';
 
 export function createGameConfig(PhaserApi) {
   return {
