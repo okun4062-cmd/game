@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#080914">
 <meta name="description" content="NOCTURNE II: Eclipse Edition — большие пиксельные миры, секреты, мини-боссы и легендарные стражи. Бесплатная браузерная игра.">
 <title>NOCTURNE II · Eclipse Edition — Бесконечные миры</title>
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <style>
 :root{color-scheme:dark;--bg:#070911;--edge:#343249;--gold:#eed5a1;--text:#e9e5de;--muted:#9b9bac}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}body{background:radial-gradient(ellipse at 50% -15%,#25223f 0,transparent 55%),#080914;overscroll-behavior:none}button{font:inherit;cursor:pointer}button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
@@ -114,6 +115,9 @@ footer{margin-top:25px;border-top:0;letter-spacing:.1em;color:#9992a9}
 @media(max-width:750px){main{width:calc(100% - 18px);padding-top:14px}.head{margin-bottom:16px}.brand-sigil{width:36px;height:36px}.brand-stack{gap:10px}.features{grid-template-columns:1fr}.feature{min-height:118px}.feature h3{margin-top:10px}.edition-banner{font-size:8px}.top-right-note{display:none}.menu-card{padding:18px 13px}.overlay h1{font-size:clamp(25px,5vw,42px);margin:8px 0}.overlay p{margin-bottom:9px}.menu-meta{display:none}.legend{margin-top:10px}.primary{padding:9px 15px;min-height:36px;min-width:125px;font-size:11px}.info{padding-top:12px}.progress-wrap{display:none}}
 @media(max-width:560px){.mark{font-size:16px}.sup{font-size:8px}.head{gap:4px}.chip{font-size:9px;padding:0 7px;min-height:32px}.shell{border-radius:6px}.touch button{border-radius:8px}.overlay .orn{font-size:8px;letter-spacing:.16em}.overlay p{font-size:10px}.overlay h1{font-size:25px}.menu-card{width:96%;padding:12px 10px}.legend{display:none}}
 .shell:fullscreen{border-radius:0}
+.shell:fullscreen .floating-controls{right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top))}
+.shell:fullscreen .floating-controls button{width:44px;height:44px;font-size:20px}
+@media(pointer:coarse){.shell:fullscreen .touch button{min-width:50px;min-height:50px}}
 
 </style>
 </head>
@@ -126,7 +130,7 @@ footer{margin-top:25px;border-top:0;letter-spacing:.1em;color:#9992a9}
  <div class="edition-banner"><span>VOL. 02 <span style="opacity:.5;margin:0 6px">/</span> БЕСКОНЕЧНОЕ ПУТЕШЕСТВИЕ</span><span>12 ЛЕГЕНДАРНЫХ СТРАЖЕЙ · ∞ МИРОВ</span></div>
  <section class="shell" id="shell" aria-label="Игровое поле">
    <canvas id="screen" width="480" height="270" aria-label="Бесконечная игра"></canvas>
-   <div class="floating-controls"><button id="pauseBtn" title="Пауза">Ⅱ</button></div>
+   <div class="floating-controls"><button id="exitFullBtn" title="Войти / выйти из полного экрана" aria-label="Переключить полный экран">⛶</button><button id="pauseBtn" title="Пауза" aria-label="Пауза">Ⅱ</button></div>
    <div class="touch" id="touch">
     <div class="touch-left"><button data-key="left" aria-label="Влево">◀</button><button data-key="right" aria-label="Вправо">▶</button></div>
     <div class="touch-right"><button data-key="dash" aria-label="Рывок">◆</button><button data-key="attack" aria-label="Атака">⚔</button><button data-key="jump" aria-label="Прыжок">↑</button></div>
@@ -961,6 +965,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='p
 startBtn.addEventListener('click',()=>start());
 document.getElementById('pauseBtn').addEventListener('click',()=>{if(state==='play')pause();else if(state==='pause')start()});
 document.getElementById('soundBtn').addEventListener('click',e=>{sound=!sound;e.currentTarget.textContent=sound?'♫ ЗВУК: ВКЛ':'♫ ЗВУК: ВЫКЛ';sfx(620,.1)});
+document.getElementById('exitFullBtn').addEventListener('click',()=>document.getElementById('fullBtn').click());
 document.getElementById('fullBtn').addEventListener('click',async()=>{
  if(document.fullscreenElement){try{await document.exitFullscreen()}catch(e){}shell.classList.remove('fallback-full');return}
  try{if(!shell.requestFullscreen)throw new Error('no fullscreen');await shell.requestFullscreen();if(screen.orientation&&screen.orientation.lock){try{await screen.orientation.lock('landscape')}catch(e){}}}
