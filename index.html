@@ -336,6 +336,10 @@ function bossFire(){
  }
  sfx(85+k*8,.15,'triangle',.023);
 }
+function treasurePos(st,j){
+ const offsets=[480,1070,1430,2150,2440];
+ return {x:st*ZONE+offsets[j],y:j===1||j===3?G-87:G-27};
+}
 function updateAdventure(st){
  const base=st*ZONE;
  // Resting lanterns are persistent checkpoints.
