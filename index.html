@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080914">
-<meta name="description" content="NOCTURNE: бесконечная пиксельная экшен-платформер игра с 12 боссами, аренами и управлением для телефона.">
-<title>NOCTURNE — Бесконечное королевство</title>
+<meta name="description" content="NOCTURNE II: Eclipse Edition — большие пиксельные миры, секреты, мини-боссы и легендарные стражи. Бесплатная браузерная игра.">
+<title>NOCTURNE II · Eclipse Edition — Бесконечные миры</title>
 <style>
 :root{color-scheme:dark;--bg:#070911;--edge:#343249;--gold:#eed5a1;--text:#e9e5de;--muted:#9b9bac}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}body{background:radial-gradient(ellipse at 50% -15%,#25223f 0,transparent 55%),#080914;overscroll-behavior:none}button{font:inherit;cursor:pointer}button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
@@ -33,14 +33,97 @@ main{width:min(1200px,calc(100% - 30px));margin:0 auto;padding:22px 0 26px}
 .shell:fullscreen{width:100vw;height:100dvh;aspect-ratio:auto;border:0;box-shadow:none}.shell:fullscreen canvas{width:100%;height:100%}.shell:fullscreen .touch button{width:clamp(42px,6vw,72px);height:clamp(42px,6vw,72px)}
 .shell.fallback-full{position:fixed;inset:0;width:100vw;height:100dvh;aspect-ratio:auto;z-index:99;border:0}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* NOCTURNE — ECLIPSE EDITION 2.0 */
+:root{--gold:#f5dba7;--text:#f2f0ed;--muted:#b5b6c9;--cosmos:#080917;--violet:#a7a0ec}
+html,body{background:#050710}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:
+ radial-gradient(ellipse 750px 550px at 18% -4%,#30264b88,transparent 77%),
+ radial-gradient(ellipse 850px 580px at 94% 26%,#172f4f77,transparent 82%),
+ linear-gradient(#060811,#090b18 47%,#060711);color:var(--text)}
+body:before{content:"";position:fixed;inset:0;opacity:.22;pointer-events:none;z-index:-1;
+ background-image:radial-gradient(circle,#ffffff 0.65px,transparent 1px);background-size:67px 83px;
+ background-position:16px 28px}
+main{width:min(1300px,calc(100% - 48px));padding:35px 0 75px}
+.head{align-items:center;gap:20px;margin-bottom:22px}
+.brand-stack{display:flex;align-items:center;gap:16px}
+.brand-sigil{width:48px;height:48px;display:grid;place-items:center;border-radius:13px;position:relative;
+ background:radial-gradient(circle at 50% 50%,#ffdca5 0 5%,#090b16 9% 27%,#d2bca3 29% 33%,#332f53 36%,#111323 65%);
+ border:1px solid #b19e8680;box-shadow:0 0 42px #e6caa11d,inset 0 0 15px #baa7ff28}
+.brand-sigil:before{content:"";position:absolute;inset:-6px;border:1px solid #ddd0bb15;border-radius:17px}
+.mark{font-size:clamp(23px,3.4vw,35px);font-weight:900;letter-spacing:.15em;line-height:1.1;text-shadow:0 5px 36px #f0d6ae1c}
+.mark em{font-size:.63em;vertical-align:5px;margin-left:5px}
+.sup{margin-top:7px;color:#c8c4d1;font-size:10px}
+.top-right-note{text-align:right;font-size:10px;color:#aaa4bd;letter-spacing:.13em;margin-bottom:6px}
+.chip{border-color:#c9b8a04d;background:linear-gradient(160deg,#242439dd,#121425ee);border-radius:8px;
+ font-size:11px;font-weight:800;min-height:40px;letter-spacing:.04em;padding:0 15px;transition:all .18s}
+.chip:hover{background:#33334d;border-color:#ead5b3;box-shadow:0 0 18px #d5bca52a}
+#fullBtn{color:#1a1922;background:linear-gradient(145deg,#f7e4bd,#ddc299);border-color:#f6d9ac}
+#fullBtn:hover{color:#1a1922;background:#fff0ce}
+.edition-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;
+ font-size:10px;letter-spacing:.22em;color:#a9a6b9;text-transform:uppercase}
+.edition-banner span:nth-child(2){color:#eed9b0}
+.shell{border:1px solid #c7a87d92;border-radius:13px;
+ box-shadow:0 0 0 5px #0c0d19,0 0 0 6px #66587f44,0 25px 95px #000b,0 0 140px #9c8cff19}
+.shell:after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+ box-shadow:inset 0 0 0 1px #e4d1ab36,inset 0 0 100px 14px #06061544}
+.floating-controls{right:13px;top:13px;z-index:4}
+.floating-controls button{border:1px solid #e1c7a87c;background:#0b0c1cbf;backdrop-filter:blur(10px);border-radius:7px;transition:background .2s}
+.floating-controls button:hover{background:#3e355c}
+.overlay{z-index:6;background:radial-gradient(ellipse at 50% 55%,#111529b8,#03040ce8 68%);backdrop-filter:blur(4px)}
+.menu-card{position:relative;width:min(700px,95%);padding:32px 26px 26px;border:1px solid #cab18b5c;
+ background:linear-gradient(155deg,#18203bd1,#0d0d1bdd 63%,#1c1529c7);box-shadow:0 0 85px #0008,0 0 36px #eacba212;
+ border-radius:12px;overflow:hidden}
+.menu-card:before,.menu-card:after{content:"";position:absolute;width:85px;height:1px;top:0;background:#f4dfb7;box-shadow:0 0 20px #ffe8b6}
+.menu-card:before{left:10%}.menu-card:after{right:10%}
+.orn{font-size:10px;letter-spacing:.39em;color:#e7ce9f;text-transform:uppercase}
+.overlay h1{font-size:clamp(36px,5.4vw,74px);font-weight:800;letter-spacing:.045em;line-height:1.02;margin:16px 0 16px;
+ font-family:Georgia,"Times New Roman",serif;text-transform:uppercase}
+.overlay h1 span{color:#ffe7b7;text-shadow:0 0 42px #ffc87658}
+.overlay p{max-width:560px;margin:0 auto 22px;font-size:clamp(12px,1.35vw,16px);line-height:1.55;color:#dbdae5}
+.primary{background:linear-gradient(135deg,#ffe9bf,#e4bf86);color:#24202b;box-shadow:0 0 50px #e8c68d2a;
+ border:1px solid #fff2d6;border-radius:7px;transition:transform .2s,box-shadow .2s;padding:12px 28px}
+.primary:hover{transform:translateY(-2px);box-shadow:0 0 56px #f9dba455}
+#continueBtn{background:#14192d;border:1px solid #c1b4d266;color:#ece8f3;display:none;min-height:44px;border-radius:7px;
+ margin:9px 0 0;padding:10px 26px;font-size:12px;letter-spacing:.11em;font-weight:800}
+#continueBtn.show{display:inline-block}
+.menu-meta{display:flex;gap:15px;justify-content:center;margin-top:18px;color:#b9b6c5;font-size:9px;letter-spacing:.13em}
+.menu-meta span:before{content:"✧";color:#e8d1a5;margin-right:6px}
+.legend{margin-top:18px;gap:15px;font-size:10px;color:#bcbac9}
+.touch{z-index:5}
+.touch button{border-radius:13px;background:linear-gradient(140deg,#242b4cc9,#0a1023c9);
+ border:1px solid #e1d0b183;box-shadow:inset 0 0 18px #fff1bc0a,0 5px 15px #0007;
+ color:#f8e9c9;backdrop-filter:blur(8px)}
+.touch button.on{background:#efd9a566;box-shadow:0 0 20px #ffe2a655}
+.touch-right button:nth-child(2){color:#fff4de;border-color:#ffbd9b}
+.info{padding:23px 2px 13px;align-items:center;line-height:1.5;border-bottom:1px solid #82708d35}
+.info strong{color:#f4dbad}
+.info .kbd{font-size:11px;color:#aaa9bd}
+.progress-wrap{display:flex;gap:12px;justify-content:space-between;align-items:center;color:#d2c7b7;font-size:11px;letter-spacing:.13em}
+#metaProgress{display:inline-block;width:160px;height:4px;background:#ffffff19;border-radius:3px;vertical-align:middle;overflow:hidden}
+#metaProgress span{display:block;height:100%;width:0;background:#ffe0a3;box-shadow:0 0 12px #ffe3aa}
+.features{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:23px}
+.feature{position:relative;overflow:hidden;padding:24px 22px;background:linear-gradient(130deg,#1d1d34c2,#0f1529b8);
+ border:1px solid #80779b38;border-radius:12px;min-height:148px}
+.feature:before{content:"";position:absolute;right:-20px;top:-23px;width:115px;height:115px;border-radius:50%;
+ border:1px solid #d2b7921c;box-shadow:0 0 0 24px #d2b7920a,0 0 0 50px #d2b79208}
+.feature .number{font-size:11px;color:#dec395;letter-spacing:.2em}
+.feature h3{font-size:17px;letter-spacing:.05em;margin:16px 0 7px;font-weight:700}
+.feature p{font-size:12px;color:#aaa9c0;line-height:1.55;margin:0}
+footer{margin-top:25px;border-top:0;letter-spacing:.1em;color:#9992a9}
+@media(max-width:750px){main{width:calc(100% - 18px);padding-top:14px}.head{margin-bottom:16px}.brand-sigil{width:36px;height:36px}.brand-stack{gap:10px}.features{grid-template-columns:1fr}.feature{min-height:118px}.feature h3{margin-top:10px}.edition-banner{font-size:8px}.top-right-note{display:none}.menu-card{padding:18px 13px}.overlay h1{font-size:clamp(25px,5vw,42px);margin:8px 0}.overlay p{margin-bottom:9px}.menu-meta{display:none}.legend{margin-top:10px}.primary{padding:9px 15px;min-height:36px;min-width:125px;font-size:11px}.info{padding-top:12px}.progress-wrap{display:none}}
+@media(max-width:560px){.mark{font-size:16px}.sup{font-size:8px}.head{gap:4px}.chip{font-size:9px;padding:0 7px;min-height:32px}.shell{border-radius:6px}.touch button{border-radius:8px}.overlay .orn{font-size:8px;letter-spacing:.16em}.overlay p{font-size:10px}.overlay h1{font-size:25px}.menu-card{width:96%;padding:12px 10px}.legend{display:none}}
+.shell:fullscreen{border-radius:0}
+
 </style>
 </head>
 <body>
 <main>
  <header class="head">
-  <div><div class="mark">N<span style="color:#f0d9a6">Ø</span>CTURNE <em>∞</em></div><div class="sup">THE INFINITE KINGDOM · PIXEL SOULS</div></div>
-  <div class="head-side"><button class="chip" id="soundBtn" aria-label="Звук">♫ ЗВУК: ВЫКЛ</button><button class="chip" id="fullBtn">⛶ НА ВЕСЬ ЭКРАН</button></div>
+  <div class="brand-stack"><div class="brand-sigil" aria-hidden="true"></div><div><div class="mark">N<span style="color:#f0d9a6">Ø</span>CTURNE <em>Ⅱ</em></div><div class="sup">ECLIPSE EDITION · INFINITE REALMS</div></div></div>
+  <div class="head-side"><div class="top-right-note">ИСКУССТВО ТЁМНЫХ КОРОЛЕВСТВ</div><button class="chip" id="soundBtn" aria-label="Звук">♫ ЗВУК: ВЫКЛ</button><button class="chip" id="fullBtn">⛶ ПОЛНЫЙ ЭКРАН</button></div>
  </header>
+ <div class="edition-banner"><span>VOL. 02 <span style="opacity:.5;margin:0 6px">/</span> БЕСКОНЕЧНОЕ ПУТЕШЕСТВИЕ</span><span>12 ЛЕГЕНДАРНЫХ СТРАЖЕЙ · ∞ МИРОВ</span></div>
  <section class="shell" id="shell" aria-label="Игровое поле">
    <canvas id="screen" width="480" height="270" aria-label="Бесконечная игра"></canvas>
    <div class="floating-controls"><button id="pauseBtn" title="Пауза">Ⅱ</button></div>
@@ -49,15 +132,24 @@ main{width:min(1200px,calc(100% - 30px));margin:0 auto;padding:22px 0 26px}
     <div class="touch-right"><button data-key="dash" aria-label="Рывок">◆</button><button data-key="attack" aria-label="Атака">⚔</button><button data-key="jump" aria-label="Прыжок">↑</button></div>
    </div>
    <div class="overlay" id="overlay">
-    <div class="orn" id="subTitle">12 легендарных стражей · бесконечный путь</div>
-    <h1 id="overTitle">ОТКРОЙ <span>БЕЗДНУ</span></h1>
-    <p id="overText">Пробивайся сквозь тёмные королевства, побеждай огромных боссов в уникальных аренах. Каждая победа открывает новый мир. Конца нет.</p>
-    <button id="startBtn" class="primary">НАЧАТЬ ПУТЬ →</button>
-    <div class="legend"><span>← → / A D — движение</span><span>SPACE — прыжок ×2</span><span>J / X — удар</span><span>SHIFT — рывок</span><span>ESC — пауза</span></div>
+    <div class="menu-card">
+      <div class="orn" id="subTitle">ДРЕВНИЕ МИРЫ ПРОБУЖДАЮТСЯ</div>
+      <h1 id="overTitle">ПО ТУ СТОРОНУ <span>СВЕТА</span></h1>
+      <p id="overText">Бесконечная пиксельная одиссея. Исследуй древние руины и секреты, собери осколки света, одолей проклятых стражей. Каждый мир — новая история.</p>
+      <button id="startBtn" class="primary">НОВОЕ ПРИКЛЮЧЕНИЕ →</button>
+      <button id="continueBtn">ПРОДОЛЖИТЬ СОХРАНЕНИЕ ↗</button>
+      <div class="menu-meta"><span>12 МИРОВ</span><span>МИНИ-БОССЫ</span><span>ТАЙНИКИ</span><span>СОХРАНЕНИЯ</span></div>
+      <div class="legend"><span>← → / A D — движение</span><span>SPACE — двойной прыжок</span><span>J / X — удар</span><span>SHIFT — рывок</span><span>ESC — пауза</span></div>
+    </div>
    </div>
  </section>
- <div class="info"><span><strong id="zoneLabel">I · ЗАБЫТЫЕ ВРАТА</strong> — следующий страж ждёт впереди</span><span class="kbd">A/D · SPACE · J · SHIFT · ESC</span><span id="record">РЕКОРД: 0</span></div>
- <footer><span>NOCTURNE // INFINITE EDITION</span><span>12 боссов · процедурные миры · сохранение рекорда</span></footer>
+ <div class="info"><span><strong id="zoneLabel">I · ЗАБЫТЫЕ ВРАТА</strong> — следуй за светом, открой легенды</span><span class="progress-wrap">ПУТЬ <span id="metaProgress"><span id="metaFill"></span></span></span><span class="kbd">A/D · SPACE · J · SHIFT · ESC</span><span id="record">РЕКОРД: 0</span></div>
+ <div class="features">
+  <article class="feature"><div class="number">01 / МИРЫ</div><h3>Дальше, чем горизонт</h3><p>12 разных атмосфeр, гигантские локации и бесконечное странствие.</p></article>
+  <article class="feature"><div class="number">02 / ТАЙНЫ</div><h3>Загадки и секреты</h3><p>Скрытые алтари, кристаллы, мини-боссы и редкие награды.</p></article>
+  <article class="feature"><div class="number">03 / СРАЖЕНИЯ</div><h3>Тени древних стражей</h3><p>Огромные боссы, новые паттерны, рывок и меткие удары.</p></article>
+ </div>
+ <footer><span>© NOCTURNE / ECLIPSE EDITION</span><span>СОЗДАНО ДЛЯ БРАУЗЕРА · УПРАВЛЕНИЕ НА ТЕЛЕФОНЕ · БЕЗ УСТАНОВКИ</span></footer>
 </main>
 <script>
 (function(){
