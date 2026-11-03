@@ -42,7 +42,18 @@ window.NocturneForge = function(e){
     bedrock:{color:'#20212d',top:'#4d4755',weight:9,hard:999,drop:null,req:99}
   };
   let bag={},owned=new Set(),gear={},miningXP=0,stats={mobs:0,blocks:0,bosses:0};
-  let mineShots=[];
+  let mineShots=[],aimScreen=null;
+  const gameCanvas=e.ctx.canvas;
+  function updateAimPointer(ev){
+    const rect=gameCanvas.getBoundingClientRect();
+    aimScreen={x:(ev.clientX-rect.left)*e.W/rect.width,y:(ev.clientY-rect.top)*e.H/rect.height};
+  }
+  gameCanvas.addEventListener('pointermove',updateAimPointer);
+  gameCanvas.addEventListener('pointerleave',()=>{aimScreen=null});
+  gameCanvas.addEventListener('pointerdown',ev=>{
+    if(ev.pointerType==='touch'||!inMine||e.mode()!=='play'||!['copperRepeater','voidRepeater'].includes(gear.weapon))return;
+    updateAimPointer(ev);ev.preventDefault();fireGun(e.player(),aimTarget(e.player()));
+  });
   let inMine=false,inventoryOpen=false,activeTab='recipes',surface=null,mineZone=0;
   let mineCameraY=0,mineCameraX=0,removed=new Set(),tileDamage=new Map(),minedCount=0;
   let mineEnemies=[],mineMobSpawnTick=0,surfaceNodeCooldown=new Map(),geodeCooldown=new Map();
@@ -177,7 +188,7 @@ window.NocturneForge = function(e){
       '2. A/D — движение, SPACE — двойной прыжок. Удерживай F или кнопку ⛏ для копания.<br>'+
       '3. Зажми S / ▼ и копай, чтобы рыть вниз. Чтобы копать наверх, зажми W / ↑.<br>'+
       '4. Медная руда → медная кирка → железная → кристальная → кирка Бездны.<br>'+
-      '5. В пещерах есть богатые жилы, светящиеся гроты и подземные враги. Создай самострел в кузнице и стреляй кнопкой ⚔ / J.<br>'+
+      '5. В пещерах есть богатые жилы, светящиеся гроты и подземные враги. Создай самострел: наведи мышь и кликай, либо стреляй кнопкой ⚔ / J.<br>'+
       '6. Создай рудничный самострел и патроны, чтобы стрелять по существам вдаль. <b>J / X</b> или ⚔ — выстрел.<br>'+
       '7. Боссы получают больше здоровья и урона после каждого мира.<br>'+
       '8. R — выпить эликсир, I — открыть/закрыть сумку. Прогресс шахты сохраняется.<br><br>'+
@@ -419,11 +430,18 @@ window.NocturneForge = function(e){
     }
     if(mineSparks.length>130)mineSparks.splice(0,mineSparks.length-130);
   }
-  function fireGun(p){
+  function aimTarget(p){
+    if(aimScreen)return {x:aimScreen.x+mineCameraX,y:aimScreen.y+mineCameraY};
+    return {x:p.x+p.w/2+p.face*320,y:p.y+p.h/2};
+  }
+  function fireGun(p,target=aimTarget(p)){
+    if(p.attackCd>0)return;
     if((bag.ammo||0)<1){if(e.tick()%40<12)e.notif('Нет патронов · создай их в кузнице');return}
     bag.ammo--;p.attack=7;p.attackCd=17;
-    const muzzleX=p.x+(p.face>0?p.w+4:-9),muzzleY=p.y+9;
-    mineShots.push({x:muzzleX,y:muzzleY,vx:p.face*8.8,life:55,damage:Math.max(2,Math.ceil(weaponDamage()/3)),color:gear.weapon==='voidRepeater'?'#d88cff':'#ffd27c'});
+    const dx=target.x-(p.x+p.w/2),dy=target.y-(p.y+p.h*.46),length=Math.max(1,Math.hypot(dx,dy));
+    p.face=dx>=0?1:-1;
+    const muzzleX=p.x+(p.face>0?p.w+4:-9),muzzleY=p.y+9,speed=9.2;
+    mineShots.push({x:muzzleX,y:muzzleY,vx:dx/length*speed,vy:dy/length*speed,life:82,travel:0,damage:Math.max(2,Math.ceil(weaponDamage()/3)),color:gear.weapon==='voidRepeater'?'#d88cff':'#ffd27c'});
     sparkAt(muzzleX,muzzleY,6,gear.weapon==='voidRepeater'?'#d88cff':'#ffd27c');
     e.sfx(gear.weapon==='voidRepeater'?780:460,.09,'sawtooth',.035);
     if(inventoryOpen)renderTab();
@@ -444,7 +462,7 @@ window.NocturneForge = function(e){
     p.vy=Math.min(6.7,p.vy+.31);
     if(p.attackCd>0)p.attackCd--;
     if(e.pressed.attack&&p.attackCd<=0){
-      if(gear.weapon==='copperRepeater'||gear.weapon==='voidRepeater'){fireGun(p)}else{
+      if(gear.weapon==='copperRepeater'||gear.weapon==='voidRepeater'){fireGun(p,aimTarget(p))}else{
       p.attack=10;p.attackCd=20;
       e.sfx(430,.07);for(const bat of mineEnemies){
         if(bat.hp>0&&Math.abs(bat.x-p.x)<32&&Math.abs(bat.y-p.y)<32){
@@ -495,7 +513,7 @@ window.NocturneForge = function(e){
       }
     }
     for(let i=mineShots.length-1;i>=0;i--){
-      const shot=mineShots[i];shot.x+=shot.vx;shot.life--;
+      const shot=mineShots[i];shot.x+=shot.vx;shot.y+=shot.vy;shot.travel+=Math.hypot(shot.vx,shot.vy);shot.life--;
       let hit=false;
       if(tileAt(Math.floor(shot.x/TS),Math.floor(shot.y/TS))){sparkAt(shot.x,shot.y,5,shot.color);hit=true;}
       for(const bat of mineEnemies){
@@ -505,7 +523,7 @@ window.NocturneForge = function(e){
           break;
         }
       }
-      if(hit||shot.life<=0||shot.x<0||shot.x>p.x+520||shot.x<p.x-520)mineShots.splice(i,1);
+      if(hit||shot.life<=0||shot.travel>680||shot.x<0||shot.x>p.x+720||shot.x<p.x-720)mineShots.splice(i,1);
     }
     if(mineEnemies.length>22)mineEnemies=mineEnemies.filter(b=>b.hp>0&&Math.abs(b.x-p.x)<450);
     for(let i=mineSparks.length-1;i>=0;i--){
@@ -535,6 +553,21 @@ window.NocturneForge = function(e){
       if(!type){
         if(n>.9){ctx.fillStyle='#ffffff0d';ctx.fillRect(x+3,y+5,2,2)}
         if(r>15&&r%12===0&&n>.8){ctx.fillStyle=b.light+'2d';ctx.fillRect(x+5,y+1,1,7)}
+        // Jagged cave teeth grow from ceilings and floors, breaking the straight tile grid.
+        const ceiling=tileAt(c,r-1),floor=tileAt(c,r+1);
+        if(ceiling&&n>.56){
+          const w=3+Math.floor(hash(c,r,42)*5),h=4+Math.floor(hash(c,r,43)*8),cx=x+3+Math.floor(hash(c,r,44)*9);
+          ctx.fillStyle=ceiling==='bedrock'?'#343140':'#262a3a';
+          ctx.beginPath();ctx.moveTo(cx-w/2,y);ctx.lineTo(cx+w/2,y);ctx.lineTo(cx+1,y+h);ctx.closePath();ctx.fill();
+          ctx.fillStyle='#c3d2e018';ctx.fillRect(cx-w/2+1,y+1,1,Math.max(2,h-3));
+          if(n>.94){ctx.fillStyle=b.light+'bd';ctx.fillRect(cx-1,y+h-2,2,2)}
+        }
+        if(floor&&n>.84&&r>18){
+          const wave=Math.sin(e.tick()*.045+c*.7)*.7;
+          ctx.fillStyle='#315b7860';ctx.fillRect(x,y+11+wave,16,5);
+          ctx.fillStyle='#8bd9df55';ctx.fillRect(x+2,y+12+wave,5,1);
+          ctx.fillStyle='#d7fbff30';ctx.fillRect(x+9,y+13+wave,4,1);
+        }
         continue;
       }
       const d=oreDef[type];
@@ -644,9 +677,15 @@ window.NocturneForge = function(e){
     e.drawPlayer();
     ctx.restore();
     for(const shot of mineShots){
-      const x=shot.x-mineCameraX,y=shot.y-mineCameraY;
-      ctx.fillStyle=shot.color+'55';ctx.fillRect(x-4,y-2,13,5);
-      ctx.fillStyle='#fff2c9';ctx.fillRect(x,y-1,7,2);
+      const x=shot.x-mineCameraX,y=shot.y-mineCameraY,angle=Math.atan2(shot.vy,shot.vx);
+      ctx.save();ctx.translate(x,y);ctx.rotate(angle);
+      ctx.fillStyle=shot.color+'66';ctx.fillRect(-13,-2,17,5);
+      ctx.fillStyle='#fff2c9';ctx.fillRect(-1,-1,9,2);ctx.restore();
+    }
+    if(aimScreen&&(gear.weapon==='copperRepeater'||gear.weapon==='voidRepeater')){
+      const ax=aimScreen.x,ay=aimScreen.y;
+      ctx.save();ctx.strokeStyle=gear.weapon==='voidRepeater'?'#e9b7ff':'#ffe5ad';ctx.lineWidth=1;
+      ctx.globalAlpha=.9;ctx.beginPath();ctx.arc(ax,ay,6+Math.sin(e.tick()*.12)*1.2,0,Math.PI*2);ctx.moveTo(ax-10,ay);ctx.lineTo(ax-4,ay);ctx.moveTo(ax+4,ay);ctx.lineTo(ax+10,ay);ctx.moveTo(ax,ay-10);ctx.lineTo(ax,ay-4);ctx.moveTo(ax,ay+4);ctx.lineTo(ax,ay+10);ctx.stroke();ctx.restore();
     }
     for(const q of mineSparks){
       ctx.globalAlpha=Math.min(1,q.life/12);
