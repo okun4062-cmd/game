@@ -8,9 +8,9 @@
   <title>NOCTURNE · Открытый мир</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 
-  <link rel="stylesheet" href="./game.css">
+  <link rel="stylesheet" href="./game.css?v=20261103-ui1">
   <script src="https://cdn.jsdelivr.net/npm/phaser@4.2.1/dist/phaser.min.js" defer></script>
-  <script type="module" src="./src/main.js?v=20261103-physics5"></script>
+  <script type="module" src="./src/main.js?v=20261103-ui1"></script>
 </head>
 <body>
   <main class="app-shell">
@@ -20,14 +20,86 @@
     </header>
     <section class="game-frame" aria-label="Игровое окно">
       <div id="phaser-root"></div>
+      <div id="game-ui" aria-live="polite">
+        <div class="hud-top">
+          <section class="hud-card health-card"><div class="health-line"><span class="hud-icon">♥</span><strong id="ui-health">100 / 100</strong><span id="ui-location">EMERALD WILDS</span></div><div class="health-track"><i id="ui-health-fill"></i></div><div class="resource-line" id="ui-resources"></div></section>
+          <div class="hud-actions"><button type="button" data-panel="inventory"><span>▤</span> СУМКА <kbd>I</kbd></button><button type="button" data-panel="craft"><span>⚒</span> МАСТЕРСКАЯ <kbd>C</kbd></button></div>
+        </div>
+        <div id="ui-boss" class="boss-card" hidden></div>
+        <div id="ui-mining" class="mining-card" hidden><div><span id="ui-mining-label">Добыча</span><b id="ui-mining-percent">0%</b></div><div class="mining-track"><i id="ui-mining-fill"></i></div></div>
+        <div class="hotbar" id="ui-hotbar" aria-label="Панель инструментов"></div>
+        <div class="game-toast" id="ui-toast" hidden></div>
+        <section class="game-panel" id="ui-panel" hidden>
+          <div class="panel-heading"><div><small>NOCTURNE · СНАРЯЖЕНИЕ</small><h2 id="ui-panel-title">Сумка</h2></div><button type="button" class="panel-close" aria-label="Закрыть">×</button></div>
+          <div id="ui-panel-content"></div>
+          <div class="panel-footer">Выбери предмет мышью или нажми цифру на панели · <kbd>ESC</kbd> закрыть</div>
+        </section>
+      </div>
       <div id="load-error" class="load-error" hidden></div>
     </section>
     <section class="below-game">
       <div class="world-caption"><span class="live-dot"></span><span id="world-status">Новый мир · готов к исследованию</span></div>
-      <div class="controls-legend"><span><kbd>A</kbd><kbd>D</kbd> ходить</span><span><kbd>SPACE</kbd> прыгать</span><span><kbd>ЛКМ</kbd> атака / выстрел</span><span><kbd>F</kbd> добыча</span><span><kbd>E</kbd> алтарь</span><span><kbd>C</kbd> крафт</span><span><kbd>I</kbd> сумка</span></div>
+      <div class="controls-legend"><span><kbd>A</kbd><kbd>D</kbd> ходить</span><span><kbd>SPACE</kbd> прыгать</span><span><kbd>1–5</kbd> инструменты</span><span><kbd>ЛКМ</kbd> атака / удерживать для добычи</span><span><kbd>F</kbd> добыча перед собой</span><span><kbd>E</kbd> алтарь</span><span><kbd>C</kbd> крафт</span><span><kbd>I</kbd> сумка</span></div>
     </section>
   </main>
   <script>
+    (() => {
+      const $ = (selector) => document.querySelector(selector);
+      const ui = { panel: null, recipe: 0, signature: '', toastTimer: 0 };
+      const emit = (name, detail = {}) => window.dispatchEvent(new CustomEvent(`nocturne:${name}`, { detail }));
+      const resourceNames = { wood: 'Древесина', stone: 'Камень', ore: 'Медная руда', crystal: 'Светокристалл', ammo: 'Патроны', potion: 'Зелья' };
+      const icons = { pickaxe: '⛏', axe: '🪓', sword: '⚔', shovel: '♠', pistol: '⌁' };
+      const slotNames = { pickaxe: 'Кирка', axe: 'Топор', sword: 'Меч', shovel: 'Лопата', pistol: 'Пистолет' };
+      const formatCost = (cost, materials) => Object.entries(cost).map(([id, amount]) => `<span class="cost ${materials[id] >= amount ? 'enough' : ''}">${amount} ${resourceNames[id] || id}</span>`).join('');
+      const render = (state = {}) => {
+        const materials = state.materials || {};
+        const items = state.items || {};
+        const tools = state.tools || [];
+        const selected = state.selectedTool || 'sword';
+        const recipes = state.recipes || [];
+        const signature = JSON.stringify([state.region, state.dungeons, materials, items, tools, selected, ui.panel, ui.recipe, state.boss, state.recipes]);
+        $('#ui-health').textContent = `${Math.ceil(state.hp ?? 100)} / ${state.maxHp ?? 100}`;
+        $('#ui-health-fill').style.width = `${Math.max(0, Math.min(100, (state.hp ?? 100) / (state.maxHp ?? 100) * 100))}%`;
+        $('#ui-location').textContent = `${state.region || 'МИР'} · ${state.dungeons ?? 0}/12 ДАНЖЕЙ`;
+        $('#ui-resources').innerHTML = ['wood','stone','ore','crystal'].map(id => `<span><i>${id === 'wood' ? '▰' : id === 'stone' ? '◆' : id === 'ore' ? '◈' : '✦'}</i>${materials[id] || 0}</span>`).join('');
+        const boss = $('#ui-boss');
+        if (state.boss) { boss.hidden = false; boss.innerHTML = `<strong>${state.boss.name}</strong><span>${Math.ceil(state.boss.hp)} / ${state.boss.maxHp}</span><div class="boss-track"><i style="width:${Math.max(0, state.boss.hp / state.boss.maxHp * 100)}%"></i></div>`; }
+        else boss.hidden = true;
+        if (signature === ui.signature) return;
+        ui.signature = signature;
+        const slotIds = ['pickaxe','axe','sword','shovel','pistol'];
+        $('#ui-hotbar').innerHTML = slotIds.map((id,index) => {
+          const locked = !tools.includes(id);
+          return `<button type="button" class="hotbar-slot ${id === selected ? 'selected' : ''} ${locked ? 'locked' : ''}" data-tool="${id}" ${locked ? 'disabled' : ''}><kbd>${index+1}</kbd><span class="tool-icon">${icons[id]}</span><span class="tool-name">${slotNames[id]}</span></button>`;
+        }).join('');
+        if (!ui.panel) { $('#ui-panel').hidden = true; return; }
+        $('#ui-panel').hidden = false;
+        $('#ui-panel-title').textContent = ui.panel === 'craft' ? 'Мастерская' : 'Сумка и снаряжение';
+        if (ui.panel === 'craft') {
+          $('#ui-panel-content').innerHTML = `<div class="recipe-layout"><div class="recipe-list">${recipes.map((recipe,index) => `<button type="button" class="recipe-row ${index === ui.recipe ? 'active' : ''}" data-recipe="${index}"><strong>${recipe.name}</strong><span>${formatCost(recipe.cost, materials)}</span></button>`).join('')}</div><div class="recipe-detail"><div class="recipe-art">⚒</div><h3>${recipes[ui.recipe]?.name || 'Рецепт'}</h3><p>Предмет будет добавлен в твою сумку сразу после создания.</p><button type="button" class="craft-submit" data-craft ${recipes[ui.recipe] && Object.entries(recipes[ui.recipe].cost).some(([id,n]) => (materials[id] || 0) < n) ? 'disabled' : ''}>СОЗДАТЬ ПРЕДМЕТ</button></div></div>`;
+        } else {
+          $('#ui-panel-content').innerHTML = `<div class="inventory-layout"><div><h3>Инструменты</h3><div class="inventory-tools">${(state.toolList || []).map(tool => `<button type="button" class="inventory-tool ${tool.id === selected ? 'active' : ''} ${tool.locked && !tools.includes(tool.id) ? 'locked' : ''}" data-tool="${tool.id}" ${tool.locked && !tools.includes(tool.id) ? 'disabled' : ''}><span>${icons[tool.id]}</span><b>${tool.name}</b><small>${tool.for}</small></button>`).join('')}</div></div><div><h3>Материалы</h3><div class="material-grid">${Object.entries(resourceNames).map(([id,name]) => `<div><span>${name}</span><b>${materials[id] || items[id] || 0}</b></div>`).join('')}</div><h3 class="gear-subhead">Сумка</h3><div class="material-grid"><div><span>Патроны</span><b>${items.ammo || 0}</b></div><div><span>Зелья</span><b>${items.potion || 0}</b></div><div><span>Лунный клинок</span><b>${items.blade || 0}</b></div></div></div></div>`;
+        }
+      };
+      window.nocturneUI = {
+        update: render,
+        showToast(message) { const el = $('#ui-toast'); el.textContent = message; el.hidden = false; clearTimeout(ui.toastTimer); ui.toastTimer = setTimeout(() => { el.hidden = true; }, 2300); },
+        showMining(progress, label) { $('#ui-mining').hidden = false; $('#ui-mining-fill').style.width = `${Math.round(progress * 100)}%`; $('#ui-mining-percent').textContent = `${Math.round(progress * 100)}%`; $('#ui-mining-label').textContent = label; },
+        hideMining() { $('#ui-mining').hidden = true; },
+        togglePanel(panel) { ui.panel = ui.panel === panel ? null : panel; ui.signature = ''; emit('panel', { panel: ui.panel }); render(window.__nocturneState || {}); },
+        closePanel() { ui.panel = null; ui.signature = ''; emit('panel', { panel: null }); render(window.__nocturneState || {}); }
+      };
+      document.addEventListener('click', event => {
+        const button = event.target.closest('button'); if (!button) return;
+        if (button.dataset.panel) window.nocturneUI.togglePanel(button.dataset.panel);
+        if (button.dataset.tool) emit('tool-select', { tool: button.dataset.tool });
+        if (button.dataset.recipe !== undefined) { ui.recipe = Number(button.dataset.recipe); ui.signature = ''; emit('craft-select', { index: ui.recipe }); render(window.__nocturneState || {}); }
+        if (button.hasAttribute('data-craft')) emit('craft');
+        if (button.classList.contains('panel-close')) window.nocturneUI.closePanel();
+      });
+      document.querySelectorAll('#game-ui kbd').forEach(key => key.addEventListener('click', event => event.stopPropagation()));
+      window.addEventListener('keydown', event => { if (event.key === 'Escape' && ui.panel) window.nocturneUI.closePanel(); });
+    })();
     document.getElementById('fullscreen').addEventListener('click', async () => {
       const frame = document.querySelector('.game-frame');
       if (!document.fullscreenElement) await frame.requestFullscreen?.(); else await document.exitFullscreen?.();

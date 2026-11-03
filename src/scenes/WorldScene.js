@@ -3,7 +3,7 @@ import { ChunkManager } from '../world/ChunkManager.js';
 import { createPixelChunk } from '../world/PixelTiles.js?v=20261103-physics1';
 import { SaveSystem, SAVE_KEY, LEGACY_SAVE_KEY } from '../systems/SaveSystem.js';
 import { primaryAction } from '../systems/CombatSystem.js';
-import { createInventory, craft, equip, RECIPES, ITEMS } from '../systems/InventorySystem.js';
+import { createInventory, craft, equip, RECIPES, ITEMS, TOOLS } from '../systems/InventorySystem.js?v=20261103-ui1';
 import { DungeonSystem } from '../systems/DungeonSystem.js';
 import { BossSystem, GUARDIANS } from '../systems/BossSystem.js';
 
@@ -31,12 +31,15 @@ export function createWorldScene(Phaser) {
    this.player=this.physics.add.sprite(px,py,'wanderer-idle').setDepth(5).setCollideWorldBounds(true);this.player.body.setSize(12,22).setOffset(6,7);this.player.setMaxVelocity(180,700);this.player.setDragX(1600);this.player.hp=this.save.player.hp||100;
    this.physics.add.collider(this.player,this.groundBodies);
    this.player.takeDamage=amount=>{this.player.hp=Math.max(0,this.player.hp-amount);this.refreshHud();if(this.player.hp<=0){this.player.hp=100;this.player.setPosition(64*TILE,this.world.surfaceHeights[64]*TILE-12);this.player.setVelocity(0,0);this.showToast('Ты вернулся к костру.');}};
-   this.createTrees();this.createEnemies();this.createAltars();this.cameras.main.centerOn(this.player.x,this.player.y);this.loadChunks();this.cameras.main.startFollow(this.player,true,.12,.12);this.cameras.main.setDeadzone(96,42);
-   this.keys=this.input.keyboard.addKeys('A,D,W,SPACE,LEFT,RIGHT,UP,F');
+   this.harvestedTrees=new Set(this.save.harvestedTrees||[]);this.createTrees();this.createEnemies();this.createAltars();this.cameras.main.centerOn(this.player.x,this.player.y);this.loadChunks();this.cameras.main.startFollow(this.player,true,.12,.12);this.cameras.main.setDeadzone(96,42);
+   this.keys=this.input.keyboard.addKeys('A,D,W,SPACE,LEFT,RIGHT,UP,F,ONE,TWO,THREE,FOUR,FIVE');
    this.input.keyboard.addCapture([Phaser.Input.Keyboard.KeyCodes.SPACE,Phaser.Input.Keyboard.KeyCodes.UP,Phaser.Input.Keyboard.KeyCodes.LEFT,Phaser.Input.Keyboard.KeyCodes.RIGHT]);
    this._jumpWasDown=false;
-   this.touch={left:false,right:false,jump:false};this.input.on('pointerdown',p=>{if(this.craftPanel?.visible)return;if(p.leftButtonDown()&&!(window.matchMedia?.('(pointer: coarse)').matches&&((p.y>200&&(p.x<150||p.x>320))||(p.y>160&&p.x>320))))this.attackAtPointer(p);});
-   this.createHud();this.refreshHud();this.time.addEvent({delay:12000,loop:true,callback:()=>this.persist()});this.events.once('shutdown',()=>this.persist());
+   this.touch={left:false,right:false,jump:false,mine:false};
+   this.input.on('pointerdown',p=>{if(this.uiPanel)return;if(!p.leftButtonDown())return;const coarse=window.matchMedia?.('(pointer: coarse)').matches;if(coarse&&p.y>200&&(p.x<150||p.x>320))return;if(this.isMiningTool(this.inventory.selectedTool))this.mouseMining=true;else this.attackAtPointer(p);});
+   this.input.on('pointerup',()=>{this.mouseMining=false;});this.input.on('pointerupoutside',()=>{this.mouseMining=false;});
+   this._releaseMining=()=>{this.mouseMining=false;};window.addEventListener('pointerup',this._releaseMining);
+   this.createHud();this.refreshHud();this.time.addEvent({delay:12000,loop:true,callback:()=>this.persist()});this.events.once('shutdown',()=>{this.persist();window.removeEventListener('pointerup',this._releaseMining);window.removeEventListener('nocturne:tool-select',this._onToolSelect);window.removeEventListener('nocturne:craft-select',this._onCraftSelect);window.removeEventListener('nocturne:craft',this._onCraft);window.removeEventListener('nocturne:panel',this._onPanel);});
   }
   loadChunks(){
    const view=this.cameras.main.worldView,margin=32*TILE;
@@ -110,9 +113,11 @@ export function createWorldScene(Phaser) {
   createTrees(){
    const canopy=[0x3e7653,0xc18a43,0x9bb6c7,0x4b8c75,0x9c4f51,0x8a735a,0x4b8a7b,0x477e9a,0x765c91,0x48a28c,0x8c929f,0x78566d];
    const light=[0x79a65d,0xe3b45b,0xc2d6df,0x78ac85,0xd77866,0xa38a6c,0x78b39f,0x71acc2,0xa68bc5,0x65c8a3,0xb9bdcf,0xb77da7];
+   this.treeTargets=[];
    for(let x=10;x<this.world.width-8;){
     const ti=Math.min(11,Math.floor(x/(this.world.width/12)));
-    if(Math.abs(x*TILE-this.player.x)>80){
+    if(this.harvestedTrees.has(`tree-${x}`)){const stump=this.add.graphics().setPosition(x*TILE,this.world.surfaceHeights[x]*TILE).setDepth(2);stump.fillStyle(0x584330);stump.fillRect(-4,-10,8,10);stump.fillStyle(0x9a7148);stump.fillRect(-3,-9,6,2);}
+    else if(Math.abs(x*TILE-this.player.x)>80){
      const surface=this.world.surfaceHeights[x],g=this.add.graphics().setPosition(x*TILE,(surface-1)*TILE).setDepth(2),base=canopy[ti],hi=light[ti];
      g.fillStyle(0x342c29);g.fillRect(-2,-43,5,45);g.fillStyle(0x534037);g.fillRect(-1,-38,2,31);g.fillRect(-11,-35,11,2);g.fillRect(0,-32,12,2);
      for(let row=0;row<5;row++)for(let col=-4;col<=4;col++){
@@ -123,6 +128,7 @@ export function createWorldScene(Phaser) {
       if(noise%3===0){g.fillStyle(hi);g.fillRect(px+1,py+1,3,2);}
      }
      g.fillStyle(0xf0df98,.9);if(ti===3||ti===6||ti===9)for(let n=0;n<3;n++)g.fillRect(-13+n*10,-43+(n%2)*8,2,2);
+     this.treeTargets.push({id:`tree-${x}`,x:x*TILE,y:surface*TILE-42,surface,graphic:g});
     }
     x+=18+((x*17+ti*31)%13);
    }
@@ -137,60 +143,37 @@ export function createWorldScene(Phaser) {
    for(const d of this.world.dungeons){const x=d.x*TILE+8,y=d.y*TILE-14;const altar=this.add.image(x,y,'altar').setDepth(4).setTint(this.dungeons.isCleared(d.id)?0x56645d:0xffffff);altar.dungeon=d;this.altarSprites.push(altar);this.add.circle(x,y+10,26,0x59ead0,.07).setDepth(3);if(!this.dungeons.isCleared(d.id))this.add.text(x,y-30,'✧',{fontFamily:'monospace',fontSize:'12px',color:'#9dfff0'}).setOrigin(.5).setDepth(6);}
   }
   createHud(){
-   this.hud=this.add.container(0,0).setScrollFactor(0).setDepth(50);this.hud.add(this.add.rectangle(90,24,170,37,0x071019,.84).setStrokeStyle(1,0xc2aa73,.65));
-   this.hpText=this.add.text(15,9,'',{fontFamily:'monospace',fontSize:'9px',color:'#f1c3ad'});this.resText=this.add.text(15,23,'',{fontFamily:'monospace',fontSize:'8px',color:'#ead9b5'});this.regionText=this.add.text(465,12,'',{fontFamily:'monospace',fontSize:'9px',color:'#e8d4a6'}).setOrigin(1,0);this.hud.add([this.hpText,this.resText,this.regionText]);
-   this.toast=this.add.text(240,225,'',{fontFamily:'monospace',fontSize:'10px',color:'#f4e3c4',backgroundColor:'#10161ddb',padding:{x:9,y:6},align:'center'}).setOrigin(.5).setDepth(55);this.bossText=this.add.text(240,244,'',{fontFamily:'monospace',fontSize:'9px',color:'#ffe3d2'}).setOrigin(.5).setDepth(55);this.inventoryText=this.add.text(240,135,'',{fontFamily:'monospace',fontSize:'9px',lineSpacing:5,color:'#f2e5ce',backgroundColor:'#10131eed',padding:{x:14,y:12}}).setOrigin(.5).setDepth(60).setVisible(false);this.hud.add([this.toast,this.bossText,this.inventoryText]);
-   this.createCraftMenu();
+   this.selectedRecipe=0;this.uiPanel=null;this.mouseMining=false;this.touchMining=false;this.miningTarget=null;this.miningCracks=this.add.graphics().setDepth(4);
+   this._onToolSelect=e=>this.selectTool(e.detail?.tool);
+   this._onCraftSelect=e=>this.selectCraftRecipe(e.detail?.index||0);
+   this._onCraft=()=>this.craftSelected();
+   this._onPanel=e=>{this.uiPanel=e.detail?.panel||null;if(this.uiPanel){this.mouseMining=false;this.touchMining=false;}};
+   window.addEventListener('nocturne:tool-select',this._onToolSelect);window.addEventListener('nocturne:craft-select',this._onCraftSelect);window.addEventListener('nocturne:craft',this._onCraft);window.addEventListener('nocturne:panel',this._onPanel);
    const coarse=window.matchMedia?.('(pointer: coarse)').matches;
    const pad=(x,y,label,down,up)=>{const box=this.add.rectangle(x,y,34,30,0x121a27,.78).setStrokeStyle(1,0xe2c990,.75).setScrollFactor(0).setDepth(52).setInteractive();const text=this.add.text(x,y,label,{fontFamily:'monospace',fontSize:'13px',color:'#f6e7c9'}).setOrigin(.5).setScrollFactor(0).setDepth(53);box.on('pointerdown',down);for(const e of ['pointerup','pointerupoutside','pointerout'])box.on(e,up);box.setVisible(!!coarse);text.setVisible(!!coarse);};
-   pad(25,226,'◀',()=>this.touch.left=true,()=>this.touch.left=false);pad(66,226,'▶',()=>this.touch.right=true,()=>this.touch.right=false);pad(428,226,'▲',()=>this.touch.jump=true,()=>this.touch.jump=false);pad(340,226,'⛏',()=>this.mine(true),()=>{});pad(380,226,'✧',()=>this.tryInteract(),()=>{});pad(380,184,'⚒',()=>this.tryCraft(),()=>{});
-   this.input.keyboard.on('keydown-E',()=>this.tryInteract());this.input.keyboard.on('keydown-I',()=>{this.craftPanel.setVisible(false);this.inventoryText.setVisible(!this.inventoryText.visible);});this.input.keyboard.on('keydown-C',()=>this.tryCraft());this.input.keyboard.on('keydown-ONE',()=>this.selectWeapon('rusty-blade'));this.input.keyboard.on('keydown-TWO',()=>this.selectWeapon('pistol'));
-   this.input.keyboard.on('keydown-UP',()=>{if(this.craftPanel.visible)this.selectCraftRecipe(this.selectedRecipe-1);});this.input.keyboard.on('keydown-DOWN',()=>{if(this.craftPanel.visible)this.selectCraftRecipe(this.selectedRecipe+1);});this.input.keyboard.on('keydown-ENTER',()=>{if(this.craftPanel.visible)this.craftSelected();});this.input.keyboard.on('keydown-ESC',()=>{if(this.craftPanel.visible)this.craftPanel.setVisible(false);});
+   pad(25,226,'◀',()=>this.touch.left=true,()=>this.touch.left=false);pad(66,226,'▶',()=>this.touch.right=true,()=>this.touch.right=false);pad(428,226,'▲',()=>this.touch.jump=true,()=>this.touch.jump=false);pad(108,226,'⛏',()=>this.touchMining=true,()=>this.touchMining=false);pad(382,226,'✧',()=>this.tryInteract(),()=>{});pad(382,184,'⚒',()=>this.tryCraft(),()=>{});
+   this.input.keyboard.on('keydown-E',()=>this.tryInteract());this.input.keyboard.on('keydown-I',()=>this.tryPanel('inventory'));this.input.keyboard.on('keydown-C',()=>this.tryPanel('craft'));
+   this.input.keyboard.on('keydown-ONE',()=>this.selectTool('pickaxe'));this.input.keyboard.on('keydown-TWO',()=>this.selectTool('axe'));this.input.keyboard.on('keydown-THREE',()=>this.selectTool('sword'));this.input.keyboard.on('keydown-FOUR',()=>this.selectTool('shovel'));this.input.keyboard.on('keydown-FIVE',()=>this.selectTool('pistol'));
+   this.input.keyboard.on('keydown-UP',()=>{if(this.uiPanel==='craft')this.selectCraftRecipe(this.selectedRecipe-1);});this.input.keyboard.on('keydown-DOWN',()=>{if(this.uiPanel==='craft')this.selectCraftRecipe(this.selectedRecipe+1);});this.input.keyboard.on('keydown-ENTER',()=>{if(this.uiPanel==='craft')this.craftSelected();});this.input.keyboard.on('keydown-ESC',()=>{if(this.uiPanel)window.nocturneUI?.closePanel();});
   }
-  createCraftMenu(){
-   this.selectedRecipe=0;this.craftPanel=this.add.container(0,0).setScrollFactor(0).setDepth(70).setVisible(false);
-   this.craftPanel.add(this.add.rectangle(240,135,282,184,0x0c121b,.97).setStrokeStyle(2,0xbca575,.9));
-   this.craftPanel.add(this.add.text(111,48,'МАСТЕРСКАЯ',{fontFamily:'monospace',fontSize:'10px',color:'#f1d9a8',letterSpacing:1}).setDepth(71));
-   const close=this.add.text(338,48,'C / ESC  ×',{fontFamily:'monospace',fontSize:'7px',color:'#9aa9aa'}).setDepth(71).setInteractive({useHandCursor:true});close.on('pointerdown',pointer=>{pointer.event?.stopPropagation?.();this.craftPanel.setVisible(false);});this.craftPanel.add(close);
-   this.craftRows=RECIPES.map((recipe,index)=>{
-    const y=80+index*29,button=this.add.rectangle(240,y,248,26,0x18232d,.95).setStrokeStyle(1,0x82938c,.45).setInteractive({useHandCursor:true});
-    const cost=Object.entries(recipe.cost).map(([id,count])=>`${count} ${ITEMS[id]||id}`).join(' · ');
-    const label=this.add.text(124,y,`${recipe.name}\n${cost}`,{fontFamily:'monospace',fontSize:'6px',lineSpacing:1,color:'#c5d0c8'}).setOrigin(0,.5);
-    button.on('pointerdown',pointer=>{pointer.event?.stopPropagation?.();this.selectCraftRecipe(index);});
-    this.craftPanel.add([button,label]);return {button,label,recipe};
-   });
-   this.craftButton=this.add.rectangle(240,204,132,23,0x366b59,.98).setStrokeStyle(1,0xb4e3be,.85).setInteractive({useHandCursor:true});
-   this.craftButtonText=this.add.text(240,204,'СОЗДАТЬ · ENTER',{fontFamily:'monospace',fontSize:'7px',color:'#f2f5df'}).setOrigin(.5);
-   this.craftButton.on('pointerdown',pointer=>{pointer.event?.stopPropagation?.();this.craftSelected();});this.craftPanel.add([this.craftButton,this.craftButtonText]);this.updateCraftMenu();
-  }
-  updateCraftMenu(){
-   if(!this.craftRows)return;
-   this.craftRows.forEach((row,index)=>{const ready=Object.entries(row.recipe.cost).every(([id,count])=>(this.inventory.materials[id]||0)>=count),selected=index===this.selectedRecipe;row.button.setFillStyle(selected?0x3a5147:ready?0x1c2d35:0x171d25,.98).setStrokeStyle(1,selected?0xd8c28e:ready?0x6d9b87:0x414954,selected?.95:.55);row.label.setColor(ready?'#e5e4d7':'#899399');});
-   const recipe=RECIPES[this.selectedRecipe],ready=Object.entries(recipe.cost).every(([id,count])=>(this.inventory.materials[id]||0)>=count);this.craftButton.setFillStyle(ready?0x366b59:0x282d32,.98);this.craftButtonText.setColor(ready?'#f2f5df':'#929b9e');
-  }
-  selectCraftRecipe(index){this.selectedRecipe=(index+RECIPES.length)%RECIPES.length;this.updateCraftMenu();}
+  selectCraftRecipe(index){this.selectedRecipe=(index+RECIPES.length)%RECIPES.length;this.refreshHud();}
   craftSelected(){
    const recipe=RECIPES[this.selectedRecipe];if(!craft(this.inventory,recipe.id)){this.showToast('Пока не хватает материалов для этого рецепта.');return;}
-   if(recipe.id==='pistol')this.showToast('Пистолет создан. Нажми 2, чтобы экипировать.');else if(recipe.id==='ammo')this.showToast('Созданы патроны ×20.');else if(recipe.id==='blade')this.showToast('Лунный клинок создан. Нажми 1, чтобы экипировать.');else this.showToast('Зелье добавлено в сумку.');
+   if(recipe.id==='pistol')this.showToast('Пистолет создан. Выбери его в пятом слоте.');else if(recipe.id==='ammo')this.showToast('Созданы патроны ×20.');else if(recipe.id==='blade')this.showToast('Лунный клинок создан. Выбери меч и нажми 3.');else this.showToast('Зелье добавлено в сумку.');
    this.persist();this.refreshHud();
   }
   refreshHud(){
-   if(!this.player)return;const m=this.inventory.materials;this.hpText.setText(`♥ ${Math.ceil(this.player.hp)} / 100`);this.resText.setText(`✦ ${m.crystal}  ◆ ${m.ore}  ⛏ ${m.wood}  ● ${this.inventory.items.ammo}`);
-   const x=Math.max(0,Math.min(this.world.width-1,Math.floor(this.player.x/TILE))),biome=this.world.biomes.find(b=>x>=b.startX&&x<b.endX);this.regionText.setText(`${biome.name.toUpperCase()} · ${this.dungeons.exportCleared().length}/12 ДАНЖЕЙ`);
-   this.inventoryText.setText(`СУМКА [I]
-✦ Кристалл ${m.crystal}   ◆ Руда ${m.ore}
-⛏ Древесина ${m.wood}  ▪ Камень ${m.stone}
-Патроны: ${this.inventory.items.ammo}\nОружие: ${this.inventory.equipped}
-[1] Клинок · [2] Пистолет
-[C] Открыть мастерскую`);
-   this.bossText.setText(this.boss?.active?`${this.boss.guardian.name} ♥ ${Math.ceil(this.boss.hp)} / ${this.boss.maxHp}`:'');
-   this.updateCraftMenu();
+   if(!this.player||!window.nocturneUI)return;
+   const x=Math.max(0,Math.min(this.world.width-1,Math.floor(this.player.x/TILE))),biome=this.world.biomes.find(b=>x>=b.startX&&x<b.endX);
+   const state={hp:this.player.hp,maxHp:100,materials:this.inventory.materials,items:this.inventory.items,tools:this.inventory.tools,selectedTool:this.inventory.selectedTool,region:biome?.name||'NOCTURNE',dungeons:this.dungeons.exportCleared().length,recipes:RECIPES,toolList:TOOLS,boss:this.boss?.active?{name:this.boss.guardian.name,hp:this.boss.hp,maxHp:this.boss.maxHp}:null};
+   window.__nocturneState=state;window.nocturneUI.update(state);
   }
-  showToast(text){this.toast.setText(text).setAlpha(1);this.tweens.killTweensOf(this.toast);this.tweens.add({targets:this.toast,alpha:0,delay:2000,duration:350});}
+  showToast(text){window.nocturneUI?.showToast(text);}
   attackAtPointer(pointer){
-   const target=this.cameras.main.getWorldPoint(pointer.x,pointer.y),id=this.inventory.equipped,ranged=id==='pistol';
+   const selected=this.inventory.selectedTool;if(selected!=='sword'&&selected!=='pistol')return;
+   const target=this.cameras.main.getWorldPoint(pointer.x,pointer.y),id=selected==='pistol'?'pistol':this.inventory.equipped,ranged=id==='pistol';
    const result=primaryAction({player:this.player,weapon:ranged?{kind:'ranged',damage:22}:{kind:'melee',damage:id==='blade'?34:20,range:54},pointerWorld:target,enemies:[...this.enemies.filter(e=>e.active&&e.hp>0),...(this.boss?[this.boss]:[])],inventory:this.inventory});this.player.setFlipX(this.player.facing<0);this.player.facingAngle=Math.atan2(target.y-this.player.y,target.x-this.player.x);
-   if(result.type==='empty'){this.showToast('Нет патронов — добудь руду и нажми C.');return;}
+   if(result.type==='empty'){this.showToast('Нет патронов — создай их в мастерской.');return;}
    if(result.type==='projectile'){const shot=this.physics.add.image(result.x,result.y,'pixel-bolt').setDepth(8);shot.setRotation(Math.atan2(result.vy,result.vx));shot.setVelocity(result.vx,result.vy);shot.body.setAllowGravity(false);shot.damage=result.damage;shot.life=2.2;this.shots.push(shot);}
    else{const slash=this.add.circle(this.player.x+result.direction.x*25,this.player.y+result.direction.y*14,15,0x8bf5e0,.7).setDepth(9);this.time.delayedCall(100,()=>slash.destroy());if(result.target){if(result.target.isBoss)this.hitBoss(result.damage);else this.hitEnemy(result.target,result.damage);}}
    this.refreshHud();
@@ -198,9 +181,72 @@ export function createWorldScene(Phaser) {
   hitEnemy(enemy,damage){enemy.hp-=damage;enemy.setTint(0xffffff);this.time.delayedCall(80,()=>enemy.active&&enemy.clearTint());if(enemy.hp<=0){enemy.destroy();if(Math.random()<.55)this.inventory.materials.ore++;this.showToast('Тварь повержена · найдено немного руды.');this.persist();}}
   hitBoss(damage){if(!this.boss?.active)return;this.boss.hp-=damage;this.cameras.main.shake(70,.002);if(this.boss.hp<=0){const id=this.boss.dungeonId;this.boss.destroyGuardian();this.boss=null;this.dungeons.defeat(id);this.altarSprites.find(a=>a.dungeon.id===id)?.setTint(0x56645d);this.showToast('Страж повержен. Данж очищен навсегда.');this.persist();}}
   tryInteract(){const altar=this.altarSprites.find(a=>Math.hypot(a.x-this.player.x,a.y-this.player.y)<74);if(!altar){this.showToast('Найди светящийся алтарь глубоко в данже.');return;}if(this.dungeons.isCleared(altar.dungeon.id)){this.showToast('Данж очищен. Страж больше не появится.');return;}const def=this.dungeons.activate(altar.dungeon.id);if(!def)return;const guardian=GUARDIANS.find(b=>b.id===def.id);this.boss=BossSystem.spawn(this,guardian,altar.x+86,altar.y-12);this.boss.dungeonId=altar.dungeon.id;this.showToast(`Пробуждён страж: ${guardian.name}`);this.refreshHud();}
-  tryCraft(){const open=!this.craftPanel.visible;this.inventoryText.setVisible(false);this.craftPanel.setVisible(open);if(open)this.updateCraftMenu();}
-  selectWeapon(id){if(equip(this.inventory,id))this.showToast(`Экипировано: ${id}`);else if(id==='pistol')this.showToast('Создай пистолет клавишей C.');this.refreshHud();}
-  mine(auto=false){const p=auto?{x:this.player.x+40,y:this.player.y}:this.cameras.main.getWorldPoint(this.input.activePointer.x,this.input.activePointer.y),tx=Math.floor(p.x/TILE),ty=Math.floor(p.y/TILE);for(const [x,y] of [[tx,ty],[tx+1,ty],[tx-1,ty],[tx,ty+1],[tx,ty-1]]){if(Math.hypot(x*TILE-this.player.x,y*TILE-this.player.y)>88)continue;const id=this.chunks.getTile(x,y);if(id===null||id===TileId.AIR||id===TileId.WATER)continue;this.chunks.setTile(x,y,TileId.AIR);if(id===TileId.ORE)this.inventory.materials.ore++;else if(id===TileId.CRYSTAL)this.inventory.materials.crystal++;else if(id===TileId.STONE)this.inventory.materials.stone++;else this.inventory.materials.wood++;this.showToast(id===TileId.ORE?'Добыта медная руда!':id===TileId.CRYSTAL?'Добыт светокристалл!':'Блок добыт.');this.repaintChunk(x,y);this.rebuildTerrainCollision();this.persist();this.refreshHud();return;}}
+  tryCraft(){this.tryPanel('craft');}
+  tryPanel(panel){if(!window.nocturneUI)return;window.nocturneUI.togglePanel(panel);}
+  isMiningTool(id){return ['pickaxe','axe','shovel'].includes(id);}
+  selectTool(id){
+   if(!TOOLS.some(tool=>tool.id===id))return;
+   if(id==='pistol'&&this.inventory.items.pistol<1){this.showToast('Сначала создай пистолет в мастерской.');return;}
+   if(id==='pistol')equip(this.inventory,'pistol');
+   if(id==='sword')equip(this.inventory,this.inventory.items.blade>0?'blade':'rusty-blade');
+   this.inventory.selectedTool=id;this.mouseMining=false;this.miningTarget=null;this.miningCracks.clear();window.nocturneUI?.hideMining();
+   this.showToast(`Выбрано: ${TOOLS.find(tool=>tool.id===id)?.name||id}`);this.persist();this.refreshHud();
+  }
+  miningPoint(){
+   if(this.touchMining||this.keys.F.isDown)return{x:this.player.x+(this.player.flipX?-32:32),y:this.player.y+3};
+   const pointer=this.input.activePointer;return this.cameras.main.getWorldPoint(pointer.x,pointer.y);
+  }
+  miningDuration(id){return id===TileId.GRASS ? .36 : id===TileId.SOIL ? .48 : id===TileId.STONE ? .92 : id===TileId.ORE ? 1.15 : id===TileId.CRYSTAL ? 1.3 : id===TileId.WOOD ? .7 : .8;}
+  miningToolFor(id){return id===TileId.GRASS||id===TileId.SOIL?'shovel':id===TileId.WOOD?'axe':'pickaxe';}
+  findMiningTarget(point){
+   const tool=this.inventory.selectedTool;
+   if(tool==='axe'){
+    const tree=this.treeTargets.filter(t=>t.graphic.active&&Math.hypot(t.x-this.player.x,t.y-this.player.y)<104&&Math.hypot(t.x-point.x,t.y-point.y)<54).sort((a,b)=>Math.hypot(a.x-point.x,a.y-point.y)-Math.hypot(b.x-point.x,b.y-point.y))[0];
+    if(tree)return{kind:'tree',...tree,id:TileId.WOOD,duration:.78};
+   }
+   const tx=Math.floor(point.x/TILE),ty=Math.floor(point.y/TILE),candidates=[[tx,ty],[tx+1,ty],[tx-1,ty],[tx,ty+1],[tx,ty-1]];
+   for(const [x,y] of candidates){const id=this.chunks.getTile(x,y);if(id===null||id===TileId.AIR||id===TileId.WATER)continue;
+    const cx=x*TILE+TILE/2,cy=y*TILE+TILE/2;if(Math.hypot(cx-this.player.x,cy-this.player.y)>104)continue;
+    if(this.miningToolFor(id)!==tool)continue;
+    return{kind:'tile',x,y,cx,cy,id,duration:this.miningDuration(id)};
+   }
+   return null;
+  }
+  drawMiningCracks(target,progress){
+   const g=this.miningCracks;g.clear();if(!target||target.kind!=='tile')return;
+   const stages=Math.floor(progress*4)+1,px=target.x*TILE,py=target.y*TILE;
+   g.fillStyle(0x05090e,.12+progress*.22);g.fillRect(px+1,py+1,TILE-2,TILE-2);g.lineStyle(1,0xf1ead9,.8);
+   const cracks=[[[6,0],[8,5],[5,8],[7,15]],[[14,2],[10,6],[12,9],[8,13]],[[0,9],[5,8],[8,10],[10,7]],[[15,8],[12,9],[10,7],[7,8]]];
+   for(let i=0;i<Math.min(stages,cracks.length);i++){const path=cracks[(i+target.x+target.y)%cracks.length];for(let n=1;n<path.length;n++)g.lineBetween(px+path[n-1][0],py+path[n-1][1],px+path[n][0],py+path[n][1]);}
+  }
+  updateMining(delta){
+   const active=this.mouseMining||this.touchMining||this.keys.F.isDown;
+   if(!active||!this.isMiningTool(this.inventory.selectedTool)||this.uiPanel){this.miningTarget=null;this.miningCracks.clear();window.nocturneUI?.hideMining();return;}
+   const target=this.findMiningTarget(this.miningPoint());
+   if(!target){this.miningTarget=null;this.miningCracks.clear();window.nocturneUI?.hideMining();return;}
+   if(!this.miningTarget||this.miningTarget.kind!==target.kind||this.miningTarget.x!==target.x||this.miningTarget.y!==target.y){this.miningTarget={...target,progress:0};}
+   const mining=this.miningTarget;mining.progress=Math.min(1,mining.progress+delta/1000/mining.duration);this.drawMiningCracks(mining,mining.progress);
+   window.nocturneUI?.showMining(mining.progress,mining.kind==='tree'?'Рубка дерева':`Добыча · ${this.miningLabel(mining.id)}`);
+   if(mining.progress>=1)this.finishMining(mining);
+  }
+  miningLabel(id){return id===TileId.GRASS?'грунта':id===TileId.SOIL?'земли':id===TileId.STONE?'камня':id===TileId.ORE?'медной руды':id===TileId.CRYSTAL?'кристалла':'древесины';}
+  finishMining(target){
+   if(target.kind==='tree'){
+    const tree=this.treeTargets.find(item=>item.id===target.id);tree?.graphic.destroy();this.harvestedTrees.add(target.id);this.inventory.materials.wood+=5;
+    const stump=this.add.graphics().setPosition(target.x,target.surface*TILE).setDepth(2);stump.fillStyle(0x584330);stump.fillRect(-4,-10,8,10);stump.fillStyle(0x9a7148);stump.fillRect(-3,-9,6,2);
+    this.spawnDebris(target.x,target.surface*TILE-30,0xa98254);this.showToast('Дерево срублено · древесина +5');
+   }else{
+    const current=this.chunks.getTile(target.x,target.y);if(current!==target.id){this.miningTarget=null;this.miningCracks.clear();window.nocturneUI?.hideMining();return;}
+    this.chunks.setTile(target.x,target.y,TileId.AIR);
+    if(target.id===TileId.ORE)this.inventory.materials.ore++;else if(target.id===TileId.CRYSTAL)this.inventory.materials.crystal++;else if(target.id===TileId.STONE)this.inventory.materials.stone++;else if(target.id===TileId.WOOD)this.inventory.materials.wood++;
+    const color=target.id===TileId.CRYSTAL?0x6ee9d7:target.id===TileId.ORE?0xd5a363:target.id===TileId.STONE?0x929ca7:0x9a744e;
+    this.spawnDebris(target.cx,target.cy,color);this.repaintChunk(target.x,target.y);this.rebuildTerrainCollision();this.showToast(`${this.miningLabel(target.id)} добыто`);
+   }
+   this.miningTarget=null;this.miningCracks.clear();window.nocturneUI?.hideMining();this.persist();this.refreshHud();
+  }
+  spawnDebris(x,y,color){
+   for(let i=0;i<7;i++){const bit=this.add.rectangle(x+(Math.random()-.5)*12,y+(Math.random()-.5)*10,3+(i%2),3+(i%2),color).setDepth(7);this.tweens.add({targets:bit,x:bit.x+(Math.random()-.5)*35,y:bit.y-10-Math.random()*20,alpha:0,duration:280+Math.random()*220,ease:'Quad.easeOut',onComplete:()=>bit.destroy()});}
+  }
   repaintChunk(x,y){
    const cx=Math.floor(x/32),cy=Math.floor(y/32),key=`${cx},${cy}`,chunk={x:cx,y:cy,startX:cx*32,startY:cy*32,width:Math.min(32,this.world.width-cx*32),height:Math.min(32,this.world.height-cy*32)};
    this.chunkSprites.get(key)?.destroy();this.chunkSprites.delete(key);this.textures.remove(`chunk-${cx}-${cy}`);
@@ -209,7 +255,7 @@ export function createWorldScene(Phaser) {
   isSolid(x,y){const id=this.chunks.getTile(x,y);return id!==null&&id!==TileId.AIR&&id!==TileId.WATER;}
   update(_,delta){
    this.loadChunks();
-   const menuOpen=this.craftPanel?.visible;
+   const menuOpen=!!this.uiPanel;
    const dir=menuOpen?0:(this.keys.A.isDown||this.keys.LEFT.isDown||this.touch.left?-1:0)+(this.keys.D.isDown||this.keys.RIGHT.isDown||this.touch.right?1:0);
    const jumpDown=!menuOpen&&(this.keys.SPACE.isDown||this.keys.W.isDown||this.keys.UP.isDown||this.touch.jump);
    this.player.setVelocityX(dir*165);if(dir)this.player.setFlipX(dir<0);
@@ -217,12 +263,12 @@ export function createWorldScene(Phaser) {
    this._jumpWasDown=jumpDown;
    const pose=!this.player.body.blocked.down?'wanderer-jump':dir?['wanderer-run-a','wanderer-run-b','wanderer-run-c','wanderer-run-d'][Math.floor(this.time.now/95)%4]:'wanderer-idle';
    if(this.player.texture.key!==pose)this.player.setTexture(pose);
-   if(this.keys.F.isDown&&!this._mine){this._mine=true;this.mine();}if(!this.keys.F.isDown)this._mine=false;
+   this.updateMining(delta);
    if(this.boss?.active)this.boss.update(this.player,delta);for(const e of this.enemies){if(!e.active)continue;e.attackClock+=delta;const dx=this.player.x-e.x,dy=this.player.y-e.y,distance=Math.hypot(dx,dy);if(distance<420){e.setVelocityX(Math.sign(dx)*48);e.y+=Math.sin(this.time.now/130+e.x)*.18;if(distance<25&&e.attackClock>1000){e.attackClock=0;this.player.takeDamage?.(5);}}else e.setVelocityX(Math.sin(this.time.now/500+e.x)*15);}
    for(const shot of this.shots){if(!shot.active)continue;shot.life-=delta/1000;if(shot.life<=0||this.isSolid(Math.floor(shot.x/TILE),Math.floor(shot.y/TILE))){shot.destroy();continue;}if(this.boss?.active&&Phaser.Math.Distance.Between(shot.x,shot.y,this.boss.x,this.boss.y)<24){this.hitBoss(shot.damage);shot.destroy();continue;}const target=this.enemies.find(e=>e.active&&e.hp>0&&Phaser.Math.Distance.Between(shot.x,shot.y,e.x,e.y)<18);if(target){this.hitEnemy(target,shot.damage);shot.destroy();}}
    this.shots=this.shots.filter(s=>s.active);if(this.player.y>this.world.height*TILE-80){this.player.hp=100;this.player.setPosition(64*TILE,this.world.surfaceHeights[64]*TILE-12);this.player.setVelocity(0,0);this.showToast('Тебя спасли у костра.');}this.refreshHud();
   }
-  persist(){if(!this.player)return;this.save.player={x:this.player.x,y:this.player.y,hp:this.player.hp,maxHp:100};this.save.inventory=this.inventory||createInventory();this.save.edits=this.chunks?.exportEdits()||{};this.save.clearedDungeons=this.dungeons?.exportCleared()||[];try{localStorage.setItem(SAVE_KEY,SaveSystem.serialize(this.save));}catch{}}
+  persist(){if(!this.player)return;this.save.player={x:this.player.x,y:this.player.y,hp:this.player.hp,maxHp:100};this.save.inventory=this.inventory||createInventory();this.save.edits=this.chunks?.exportEdits()||{};this.save.clearedDungeons=this.dungeons?.exportCleared()||[];this.save.harvestedTrees=[...(this.harvestedTrees||[])];try{localStorage.setItem(SAVE_KEY,SaveSystem.serialize(this.save));}catch{}}
  };
 }
 
