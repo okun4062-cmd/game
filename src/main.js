@@ -1,5 +1,5 @@
 import { createBootScene } from './scenes/BootScene.js';
-import { createWorldScene } from './scenes/WorldScene.js';
+import { createWorldScene } from './scenes/WorldScene.js?v=20261103-physics1';
 
 export function createGameConfig(PhaserApi) {
   return {
@@ -27,3 +27,4 @@ function boot() {
 if (typeof window !== 'undefined') {
   if (window.Phaser) boot(); else window.addEventListener('load', boot, { once: true });
 }
+
