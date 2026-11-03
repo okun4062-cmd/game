@@ -383,8 +383,9 @@ window.NocturneForge = function(e){
     return null;
   }
   function strike(){
-    if(digCd>0)return;digCd=Math.max(5,13-pickTier()*2);
+    if(digCd>0)return;
     if(hitGrotto())return;
+    digCd=Math.max(5,13-pickTier()*2);
     const target=chooseDigTarget();
     if(!target){digProgress=0;digTarget='';return}
     const ore=oreDef[target.type];
