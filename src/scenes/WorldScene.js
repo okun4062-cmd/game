@@ -23,14 +23,14 @@ export function createWorldScene(Phaser) {
    this.makeSprites();
    this.inventory=createInventory(this.save.inventory);this.shots=[];this.boss=null;this.altarSprites=[];this.enemies=[];
    const tx=Math.max(2,Math.min(this.world.width-3,Math.floor((this.save.player.x||64*TILE)/TILE)));
-   const px=this.save.player.x||64*TILE;
+   const px=Math.max(2*TILE,Math.min(worldW-2*TILE,this.save.player.x||64*TILE));
    const savedY=this.save.player.y;
-   const savedCell=this.chunks.getTile(Math.floor(px/TILE),Math.floor(((savedY||0)+8)/TILE));
-   const py=savedY&&savedCell===TileId.AIR?savedY:this.world.surfaceHeights[tx]*TILE-16;
+   const freeAt=(x,y)=>{for(const [ox,oy] of [[-5,-9],[0,-9],[5,-9],[-5,12],[0,12],[5,12]]){const id=this.chunks.getTile(Math.floor((x+ox)/TILE),Math.floor((y+oy)/TILE));if(id!==TileId.AIR&&id!==TileId.WATER)return false;}return true;};
+   const py=Number.isFinite(savedY)&&freeAt(px,savedY)?savedY:this.world.surfaceHeights[tx]*TILE-12;
    this.groundBodies=this.physics.add.staticGroup();this.rebuildTerrainCollision();
    this.player=this.physics.add.sprite(px,py,'wanderer-idle').setDepth(5).setCollideWorldBounds(true);this.player.body.setSize(12,22).setOffset(6,7);this.player.setMaxVelocity(180,700);this.player.setDragX(1600);this.player.hp=this.save.player.hp||100;
    this.physics.add.collider(this.player,this.groundBodies);
-   this.player.takeDamage=amount=>{this.player.hp=Math.max(0,this.player.hp-amount);this.refreshHud();if(this.player.hp<=0){this.player.hp=100;this.player.setPosition(64*TILE,this.world.surfaceHeights[64]*TILE-16);this.player.setVelocity(0,0);this.showToast('Ты вернулся к костру.');}};
+   this.player.takeDamage=amount=>{this.player.hp=Math.max(0,this.player.hp-amount);this.refreshHud();if(this.player.hp<=0){this.player.hp=100;this.player.setPosition(64*TILE,this.world.surfaceHeights[64]*TILE-12);this.player.setVelocity(0,0);this.showToast('Ты вернулся к костру.');}};
    this.createTrees();this.createEnemies();this.createAltars();this.cameras.main.centerOn(this.player.x,this.player.y);this.loadChunks();this.cameras.main.startFollow(this.player,true,.12,.12);this.cameras.main.setDeadzone(96,42);
    this.keys=this.input.keyboard.addKeys('A,D,W,SPACE,LEFT,RIGHT,UP,F');
    this.input.keyboard.addCapture([Phaser.Input.Keyboard.KeyCodes.SPACE,Phaser.Input.Keyboard.KeyCodes.UP,Phaser.Input.Keyboard.KeyCodes.LEFT,Phaser.Input.Keyboard.KeyCodes.RIGHT]);
@@ -185,7 +185,7 @@ export function createWorldScene(Phaser) {
    if(this.keys.F.isDown&&!this._mine){this._mine=true;this.mine();}if(!this.keys.F.isDown)this._mine=false;
    if(this.boss?.active)this.boss.update(this.player,delta);for(const e of this.enemies){if(!e.active)continue;e.attackClock+=delta;const dx=this.player.x-e.x,dy=this.player.y-e.y,distance=Math.hypot(dx,dy);if(distance<420){e.setVelocityX(Math.sign(dx)*48);e.y+=Math.sin(this.time.now/130+e.x)*.18;if(distance<25&&e.attackClock>1000){e.attackClock=0;this.player.takeDamage?.(5);}}else e.setVelocityX(Math.sin(this.time.now/500+e.x)*15);}
    for(const shot of this.shots){if(!shot.active)continue;shot.life-=delta/1000;if(shot.life<=0||this.isSolid(Math.floor(shot.x/TILE),Math.floor(shot.y/TILE))){shot.destroy();continue;}if(this.boss?.active&&Phaser.Math.Distance.Between(shot.x,shot.y,this.boss.x,this.boss.y)<24){this.hitBoss(shot.damage);shot.destroy();continue;}const target=this.enemies.find(e=>e.active&&e.hp>0&&Phaser.Math.Distance.Between(shot.x,shot.y,e.x,e.y)<18);if(target){this.hitEnemy(target,shot.damage);shot.destroy();}}
-   this.shots=this.shots.filter(s=>s.active);if(this.player.y>this.world.height*TILE-80){this.player.hp=100;this.player.setPosition(64*TILE,(this.world.surfaceHeights[64]-2)*TILE);this.showToast('Тебя спасли у костра.');}this.refreshHud();
+   this.shots=this.shots.filter(s=>s.active);if(this.player.y>this.world.height*TILE-80){this.player.hp=100;this.player.setPosition(64*TILE,this.world.surfaceHeights[64]*TILE-12);this.player.setVelocity(0,0);this.showToast('Тебя спасли у костра.');}this.refreshHud();
   }
   persist(){if(!this.player)return;this.save.player={x:this.player.x,y:this.player.y,hp:this.player.hp,maxHp:100};this.save.inventory=this.inventory||createInventory();this.save.edits=this.chunks?.exportEdits()||{};this.save.clearedDungeons=this.dungeons?.exportCleared()||[];try{localStorage.setItem(SAVE_KEY,SaveSystem.serialize(this.save));}catch{}}
  };
