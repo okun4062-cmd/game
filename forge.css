@@ -100,3 +100,12 @@
  .forge-recipe h3{font-size:9px}
  .forge-item{flex-direction:column;text-align:center}
 }
+
+
+/* Surface shows standard three-button combat controls; mining actions appear underground. */
+.touch button[data-key="dig"],.touch button[data-key="down"]{display:none}
+.shell.in-mine .touch button[data-key="dig"],.shell.in-mine .touch button[data-key="down"]{display:grid}
+.shell.in-mine .touch-right{max-width:245px;flex-wrap:wrap;justify-content:flex-end;align-content:end}
+.shell.in-mine .touch button[data-key="attack"]{border-color:#ffb9b9a8}
+.shell.in-mine .touch button[data-key="dig"]{background:#473d5cbf}
+@media(max-width:530px){.shell.in-mine .touch-right{max-width:145px}.shell.in-mine .touch button{width:35px;height:35px;padding:0;font-size:15px}}
