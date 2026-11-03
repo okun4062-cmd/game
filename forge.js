@@ -497,6 +497,7 @@ window.NocturneForge = function(e){
     for(let i=mineShots.length-1;i>=0;i--){
       const shot=mineShots[i];shot.x+=shot.vx;shot.life--;
       let hit=false;
+      if(tileAt(Math.floor(shot.x/TS),Math.floor(shot.y/TS))){sparkAt(shot.x,shot.y,5,shot.color);hit=true;}
       for(const bat of mineEnemies){
         if(bat.hp>0&&Math.abs(shot.x-bat.x)<13&&Math.abs(shot.y-bat.y)<16){
           bat.hp-=shot.damage;sparkAt(bat.x,bat.y,10,shot.color);hit=true;
