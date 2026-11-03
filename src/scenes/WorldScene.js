@@ -3,7 +3,7 @@ import { ChunkManager } from '../world/ChunkManager.js';
 import { createPixelChunk } from '../world/PixelTiles.js?v=20261103-physics1';
 import { SaveSystem, SAVE_KEY, LEGACY_SAVE_KEY } from '../systems/SaveSystem.js';
 import { primaryAction } from '../systems/CombatSystem.js';
-import { createInventory, craft, equip } from '../systems/InventorySystem.js';
+import { createInventory, craft, equip, RECIPES, ITEMS } from '../systems/InventorySystem.js';
 import { DungeonSystem } from '../systems/DungeonSystem.js';
 import { BossSystem, GUARDIANS } from '../systems/BossSystem.js';
 
@@ -35,7 +35,7 @@ export function createWorldScene(Phaser) {
    this.keys=this.input.keyboard.addKeys('A,D,W,SPACE,LEFT,RIGHT,UP,F');
    this.input.keyboard.addCapture([Phaser.Input.Keyboard.KeyCodes.SPACE,Phaser.Input.Keyboard.KeyCodes.UP,Phaser.Input.Keyboard.KeyCodes.LEFT,Phaser.Input.Keyboard.KeyCodes.RIGHT]);
    this._jumpWasDown=false;
-   this.touch={left:false,right:false,jump:false};this.input.on('pointerdown',p=>{if(p.leftButtonDown()&&!(window.matchMedia?.('(pointer: coarse)').matches&&((p.y>200&&(p.x<150||p.x>320))||(p.y>160&&p.x>320))))this.attackAtPointer(p);});
+   this.touch={left:false,right:false,jump:false};this.input.on('pointerdown',p=>{if(this.craftPanel?.visible)return;if(p.leftButtonDown()&&!(window.matchMedia?.('(pointer: coarse)').matches&&((p.y>200&&(p.x<150||p.x>320))||(p.y>160&&p.x>320))))this.attackAtPointer(p);});
    this.createHud();this.refreshHud();this.time.addEvent({delay:12000,loop:true,callback:()=>this.persist()});this.events.once('shutdown',()=>this.persist());
   }
   loadChunks(){
@@ -84,19 +84,21 @@ export function createWorldScene(Phaser) {
    let g;
    if(!this.textures.exists('pixel-solid')){g=this.add.graphics();g.fillStyle(0xffffff);g.fillRect(0,0,1,1);g.generateTexture('pixel-solid',1,1);g.destroy();}
    const wanderer=(key,step=0,jump=false)=>{g=this.add.graphics();
+    const cycle=step%4,bob=cycle===1||cycle===3?1:0,leftSwing=cycle===1?2:cycle===3?0:1,rightSwing=cycle===1?0:cycle===3?2:1;
     g.fillStyle(0x101820,.42);g.fillEllipse(12,30,13,3);
-    g.fillStyle(0x202739);g.fillRect(6,15,12,10);g.fillStyle(0x294052);g.fillRect(5,17,14,7);
-    g.fillStyle(0x567486);g.fillRect(6,16,12,2);g.fillStyle(0xe5bc73);g.fillRect(6,22,12,2);
-    g.fillStyle(0x263241);g.fillRect(7,24,5,6);g.fillRect(13,24,5,6);
-    if(jump){g.fillRect(5,27,5,2);g.fillRect(15,27,5,2);}else{g.fillRect(5+(step?2:0),29,6,2);g.fillRect(14-(step?2:0),29,6,2);}
-    g.fillStyle(0x9e704e);g.fillRect(6+(step?2:0),29,5,2);g.fillRect(14-(step?2:0),29,5,2);
+    g.fillStyle(0x26394a);g.fillRect(3,16+leftSwing,4,6);g.fillRect(17,16+rightSwing,4,6);
+    g.fillStyle(0x202739);g.fillRect(6,15+bob,12,10);g.fillStyle(0x294052);g.fillRect(5,17+bob,14,7);
+    g.fillStyle(0x567486);g.fillRect(6,16+bob,12,2);g.fillStyle(0xe5bc73);g.fillRect(6,22+bob,12,2);
+    g.fillStyle(0x263241);g.fillRect(7+(cycle===1?2:cycle===3?-1:0),24,5,6);g.fillRect(13+(cycle===3?2:cycle===1?-1:0),24,5,6);
+    if(jump){g.fillRect(5,27,5,2);g.fillRect(15,27,5,2);}else{g.fillRect(5+(cycle===1?3:cycle===3?-2:0),29,6,2);g.fillRect(14+(cycle===3?2:cycle===1?-3:0),29,6,2);}
+    g.fillStyle(0x9e704e);g.fillRect(6+(cycle===1?3:cycle===3?-2:0),29,5,2);g.fillRect(14+(cycle===3?2:cycle===1?-3:0),29,5,2);
     g.fillStyle(0xd7aa83);g.fillRect(8,5,9,9);g.fillRect(6,8,2,4);g.fillRect(17,8,2,4);
     g.fillStyle(0x473332);g.fillRect(7,4,11,4);g.fillRect(6,7,3,4);g.fillRect(15,5,3,3);
     g.fillStyle(0xe8c4a0);g.fillRect(9,8,7,5);g.fillStyle(0x243443);g.fillRect(12,9,2,2);
-    g.fillStyle(0x73e0d1);g.fillRect(8,14,12,3);g.fillRect(18,13,2,5);
+    g.fillStyle(0x73e0d1);g.fillRect(8,14+bob,12,3);g.fillRect(18,13+bob,2,5);
     g.fillStyle(0xb8f4dc);g.fillRect(8,14,7,1);
     g.generateTexture(key,24,32);g.destroy();};
-   if(!this.textures.exists('wanderer-idle')){wanderer('wanderer-idle');wanderer('wanderer-run-a',1);wanderer('wanderer-run-b',0);wanderer('wanderer-jump',0,true);}
+   if(!this.textures.exists('wanderer-idle')){wanderer('wanderer-idle');wanderer('wanderer-run-a',1);wanderer('wanderer-run-b',2);wanderer('wanderer-run-c',3);wanderer('wanderer-run-d',0);wanderer('wanderer-jump',0,true);}
    g=this.add.graphics();g.fillStyle(0xffffff);g.fillRect(4,1,16,20);g.fillStyle(0x2b1937);g.fillRect(6,5,12,11);g.fillStyle(0xffffff);g.fillRect(8,8,3,2);g.fillRect(14,8,3,2);g.generateTexture('guardian',24,24);g.destroy();
    g=this.add.graphics();g.fillStyle(0x60514a);g.fillRect(4,8,16,20);g.fillStyle(0xd3aa72);g.fillRect(7,4,10,6);g.fillStyle(0x86e9d7);g.fillRect(10,0,4,7);g.generateTexture('altar',24,28);g.destroy();
    g=this.add.graphics();g.fillStyle(0x405850);g.fillRoundedRect(1,7,22,12,5);g.fillStyle(0x7ed699);g.fillRect(5,8,4,3);g.fillRect(15,8,4,3);g.generateTexture('slime',24,20);g.destroy();
@@ -138,10 +140,39 @@ export function createWorldScene(Phaser) {
    this.hud=this.add.container(0,0).setScrollFactor(0).setDepth(50);this.hud.add(this.add.rectangle(90,24,170,37,0x071019,.84).setStrokeStyle(1,0xc2aa73,.65));
    this.hpText=this.add.text(15,9,'',{fontFamily:'monospace',fontSize:'9px',color:'#f1c3ad'});this.resText=this.add.text(15,23,'',{fontFamily:'monospace',fontSize:'8px',color:'#ead9b5'});this.regionText=this.add.text(465,12,'',{fontFamily:'monospace',fontSize:'9px',color:'#e8d4a6'}).setOrigin(1,0);this.hud.add([this.hpText,this.resText,this.regionText]);
    this.toast=this.add.text(240,225,'',{fontFamily:'monospace',fontSize:'10px',color:'#f4e3c4',backgroundColor:'#10161ddb',padding:{x:9,y:6},align:'center'}).setOrigin(.5).setDepth(55);this.bossText=this.add.text(240,244,'',{fontFamily:'monospace',fontSize:'9px',color:'#ffe3d2'}).setOrigin(.5).setDepth(55);this.inventoryText=this.add.text(240,135,'',{fontFamily:'monospace',fontSize:'9px',lineSpacing:5,color:'#f2e5ce',backgroundColor:'#10131eed',padding:{x:14,y:12}}).setOrigin(.5).setDepth(60).setVisible(false);this.hud.add([this.toast,this.bossText,this.inventoryText]);
+   this.createCraftMenu();
    const coarse=window.matchMedia?.('(pointer: coarse)').matches;
    const pad=(x,y,label,down,up)=>{const box=this.add.rectangle(x,y,34,30,0x121a27,.78).setStrokeStyle(1,0xe2c990,.75).setScrollFactor(0).setDepth(52).setInteractive();const text=this.add.text(x,y,label,{fontFamily:'monospace',fontSize:'13px',color:'#f6e7c9'}).setOrigin(.5).setScrollFactor(0).setDepth(53);box.on('pointerdown',down);for(const e of ['pointerup','pointerupoutside','pointerout'])box.on(e,up);box.setVisible(!!coarse);text.setVisible(!!coarse);};
    pad(25,226,'◀',()=>this.touch.left=true,()=>this.touch.left=false);pad(66,226,'▶',()=>this.touch.right=true,()=>this.touch.right=false);pad(428,226,'▲',()=>this.touch.jump=true,()=>this.touch.jump=false);pad(340,226,'⛏',()=>this.mine(true),()=>{});pad(380,226,'✧',()=>this.tryInteract(),()=>{});pad(380,184,'⚒',()=>this.tryCraft(),()=>{});
-   this.input.keyboard.on('keydown-E',()=>this.tryInteract());this.input.keyboard.on('keydown-I',()=>this.inventoryText.setVisible(!this.inventoryText.visible));this.input.keyboard.on('keydown-C',()=>this.tryCraft());this.input.keyboard.on('keydown-ONE',()=>this.selectWeapon('rusty-blade'));this.input.keyboard.on('keydown-TWO',()=>this.selectWeapon('pistol'));
+   this.input.keyboard.on('keydown-E',()=>this.tryInteract());this.input.keyboard.on('keydown-I',()=>{this.craftPanel.setVisible(false);this.inventoryText.setVisible(!this.inventoryText.visible);});this.input.keyboard.on('keydown-C',()=>this.tryCraft());this.input.keyboard.on('keydown-ONE',()=>this.selectWeapon('rusty-blade'));this.input.keyboard.on('keydown-TWO',()=>this.selectWeapon('pistol'));
+   this.input.keyboard.on('keydown-UP',()=>{if(this.craftPanel.visible)this.selectCraftRecipe(this.selectedRecipe-1);});this.input.keyboard.on('keydown-DOWN',()=>{if(this.craftPanel.visible)this.selectCraftRecipe(this.selectedRecipe+1);});this.input.keyboard.on('keydown-ENTER',()=>{if(this.craftPanel.visible)this.craftSelected();});this.input.keyboard.on('keydown-ESC',()=>{if(this.craftPanel.visible)this.craftPanel.setVisible(false);});
+  }
+  createCraftMenu(){
+   this.selectedRecipe=0;this.craftPanel=this.add.container(0,0).setScrollFactor(0).setDepth(70).setVisible(false);
+   this.craftPanel.add(this.add.rectangle(240,135,282,184,0x0c121b,.97).setStrokeStyle(2,0xbca575,.9));
+   this.craftPanel.add(this.add.text(111,48,'МАСТЕРСКАЯ',{fontFamily:'monospace',fontSize:'10px',color:'#f1d9a8',letterSpacing:1}).setDepth(71));
+   const close=this.add.text(338,48,'C / ESC  ×',{fontFamily:'monospace',fontSize:'7px',color:'#9aa9aa'}).setDepth(71).setInteractive({useHandCursor:true});close.on('pointerdown',pointer=>{pointer.event?.stopPropagation?.();this.craftPanel.setVisible(false);});this.craftPanel.add(close);
+   this.craftRows=RECIPES.map((recipe,index)=>{
+    const y=80+index*29,button=this.add.rectangle(240,y,248,26,0x18232d,.95).setStrokeStyle(1,0x82938c,.45).setInteractive({useHandCursor:true});
+    const cost=Object.entries(recipe.cost).map(([id,count])=>`${count} ${ITEMS[id]||id}`).join(' · ');
+    const label=this.add.text(124,y,`${recipe.name}\n${cost}`,{fontFamily:'monospace',fontSize:'6px',lineSpacing:1,color:'#c5d0c8'}).setOrigin(0,.5);
+    button.on('pointerdown',pointer=>{pointer.event?.stopPropagation?.();this.selectCraftRecipe(index);});
+    this.craftPanel.add([button,label]);return {button,label,recipe};
+   });
+   this.craftButton=this.add.rectangle(240,204,132,23,0x366b59,.98).setStrokeStyle(1,0xb4e3be,.85).setInteractive({useHandCursor:true});
+   this.craftButtonText=this.add.text(240,204,'СОЗДАТЬ · ENTER',{fontFamily:'monospace',fontSize:'7px',color:'#f2f5df'}).setOrigin(.5);
+   this.craftButton.on('pointerdown',pointer=>{pointer.event?.stopPropagation?.();this.craftSelected();});this.craftPanel.add([this.craftButton,this.craftButtonText]);this.updateCraftMenu();
+  }
+  updateCraftMenu(){
+   if(!this.craftRows)return;
+   this.craftRows.forEach((row,index)=>{const ready=Object.entries(row.recipe.cost).every(([id,count])=>(this.inventory.materials[id]||0)>=count),selected=index===this.selectedRecipe;row.button.setFillStyle(selected?0x3a5147:ready?0x1c2d35:0x171d25,.98).setStrokeStyle(1,selected?0xd8c28e:ready?0x6d9b87:0x414954,selected?.95:.55);row.label.setColor(ready?'#e5e4d7':'#899399');});
+   const recipe=RECIPES[this.selectedRecipe],ready=Object.entries(recipe.cost).every(([id,count])=>(this.inventory.materials[id]||0)>=count);this.craftButton.setFillStyle(ready?0x366b59:0x282d32,.98);this.craftButtonText.setColor(ready?'#f2f5df':'#929b9e');
+  }
+  selectCraftRecipe(index){this.selectedRecipe=(index+RECIPES.length)%RECIPES.length;this.updateCraftMenu();}
+  craftSelected(){
+   const recipe=RECIPES[this.selectedRecipe];if(!craft(this.inventory,recipe.id)){this.showToast('Пока не хватает материалов для этого рецепта.');return;}
+   if(recipe.id==='pistol')this.showToast('Пистолет создан. Нажми 2, чтобы экипировать.');else if(recipe.id==='ammo')this.showToast('Созданы патроны ×20.');else if(recipe.id==='blade')this.showToast('Лунный клинок создан. Нажми 1, чтобы экипировать.');else this.showToast('Зелье добавлено в сумку.');
+   this.persist();this.refreshHud();
   }
   refreshHud(){
    if(!this.player)return;const m=this.inventory.materials;this.hpText.setText(`♥ ${Math.ceil(this.player.hp)} / 100`);this.resText.setText(`✦ ${m.crystal}  ◆ ${m.ore}  ⛏ ${m.wood}  ● ${this.inventory.items.ammo}`);
@@ -151,8 +182,9 @@ export function createWorldScene(Phaser) {
 ⛏ Древесина ${m.wood}  ▪ Камень ${m.stone}
 Патроны: ${this.inventory.items.ammo}\nОружие: ${this.inventory.equipped}
 [1] Клинок · [2] Пистолет
-[C] Крафт пистолета / патронов`);
+[C] Открыть мастерскую`);
    this.bossText.setText(this.boss?.active?`${this.boss.guardian.name} ♥ ${Math.ceil(this.boss.hp)} / ${this.boss.maxHp}`:'');
+   this.updateCraftMenu();
   }
   showToast(text){this.toast.setText(text).setAlpha(1);this.tweens.killTweensOf(this.toast);this.tweens.add({targets:this.toast,alpha:0,delay:2000,duration:350});}
   attackAtPointer(pointer){
@@ -166,7 +198,7 @@ export function createWorldScene(Phaser) {
   hitEnemy(enemy,damage){enemy.hp-=damage;enemy.setTint(0xffffff);this.time.delayedCall(80,()=>enemy.active&&enemy.clearTint());if(enemy.hp<=0){enemy.destroy();if(Math.random()<.55)this.inventory.materials.ore++;this.showToast('Тварь повержена · найдено немного руды.');this.persist();}}
   hitBoss(damage){if(!this.boss?.active)return;this.boss.hp-=damage;this.cameras.main.shake(70,.002);if(this.boss.hp<=0){const id=this.boss.dungeonId;this.boss.destroyGuardian();this.boss=null;this.dungeons.defeat(id);this.altarSprites.find(a=>a.dungeon.id===id)?.setTint(0x56645d);this.showToast('Страж повержен. Данж очищен навсегда.');this.persist();}}
   tryInteract(){const altar=this.altarSprites.find(a=>Math.hypot(a.x-this.player.x,a.y-this.player.y)<74);if(!altar){this.showToast('Найди светящийся алтарь глубоко в данже.');return;}if(this.dungeons.isCleared(altar.dungeon.id)){this.showToast('Данж очищен. Страж больше не появится.');return;}const def=this.dungeons.activate(altar.dungeon.id);if(!def)return;const guardian=GUARDIANS.find(b=>b.id===def.id);this.boss=BossSystem.spawn(this,guardian,altar.x+86,altar.y-12);this.boss.dungeonId=altar.dungeon.id;this.showToast(`Пробуждён страж: ${guardian.name}`);this.refreshHud();}
-  tryCraft(){const m=this.inventory.materials;if(m.ore>=12&&m.wood>=8){craft(this.inventory,'pistol');equip(this.inventory,'pistol');this.showToast('Создан пистолет — ЛКМ стреляет по курсору.');}else if(m.ore>=2){craft(this.inventory,'ammo');this.showToast('Созданы патроны ×20.');}else this.showToast('Нужна руда: добывай её киркой (F).');this.persist();this.refreshHud();}
+  tryCraft(){const open=!this.craftPanel.visible;this.inventoryText.setVisible(false);this.craftPanel.setVisible(open);if(open)this.updateCraftMenu();}
   selectWeapon(id){if(equip(this.inventory,id))this.showToast(`Экипировано: ${id}`);else if(id==='pistol')this.showToast('Создай пистолет клавишей C.');this.refreshHud();}
   mine(auto=false){const p=auto?{x:this.player.x+40,y:this.player.y}:this.cameras.main.getWorldPoint(this.input.activePointer.x,this.input.activePointer.y),tx=Math.floor(p.x/TILE),ty=Math.floor(p.y/TILE);for(const [x,y] of [[tx,ty],[tx+1,ty],[tx-1,ty],[tx,ty+1],[tx,ty-1]]){if(Math.hypot(x*TILE-this.player.x,y*TILE-this.player.y)>88)continue;const id=this.chunks.getTile(x,y);if(id===null||id===TileId.AIR||id===TileId.WATER)continue;this.chunks.setTile(x,y,TileId.AIR);if(id===TileId.ORE)this.inventory.materials.ore++;else if(id===TileId.CRYSTAL)this.inventory.materials.crystal++;else if(id===TileId.STONE)this.inventory.materials.stone++;else this.inventory.materials.wood++;this.showToast(id===TileId.ORE?'Добыта медная руда!':id===TileId.CRYSTAL?'Добыт светокристалл!':'Блок добыт.');this.repaintChunk(x,y);this.rebuildTerrainCollision();this.persist();this.refreshHud();return;}}
   repaintChunk(x,y){
@@ -177,14 +209,14 @@ export function createWorldScene(Phaser) {
   isSolid(x,y){const id=this.chunks.getTile(x,y);return id!==null&&id!==TileId.AIR&&id!==TileId.WATER;}
   update(_,delta){
    this.loadChunks();
-   const dir=(this.keys.A.isDown||this.keys.LEFT.isDown||this.touch.left?-1:0)+(this.keys.D.isDown||this.keys.RIGHT.isDown||this.touch.right?1:0);
-   const jumpDown=this.keys.SPACE.isDown||this.keys.W.isDown||this.keys.UP.isDown||this.touch.jump;
+   const menuOpen=this.craftPanel?.visible;
+   const dir=menuOpen?0:(this.keys.A.isDown||this.keys.LEFT.isDown||this.touch.left?-1:0)+(this.keys.D.isDown||this.keys.RIGHT.isDown||this.touch.right?1:0);
+   const jumpDown=!menuOpen&&(this.keys.SPACE.isDown||this.keys.W.isDown||this.keys.UP.isDown||this.touch.jump);
    this.player.setVelocityX(dir*165);if(dir)this.player.setFlipX(dir<0);
    if(jumpDown&&!this._jumpWasDown&&this.player.body.blocked.down)this.player.setVelocityY(-355);
    this._jumpWasDown=jumpDown;
-   if(!this.player.body.blocked.down)this.player.setTexture('wanderer-jump');
-   else if(dir)this.player.setTexture(Math.floor(this.time.now/125)%2?'wanderer-run-a':'wanderer-run-b');
-   else this.player.setTexture('wanderer-idle');
+   const pose=!this.player.body.blocked.down?'wanderer-jump':dir?['wanderer-run-a','wanderer-run-b','wanderer-run-c','wanderer-run-d'][Math.floor(this.time.now/95)%4]:'wanderer-idle';
+   if(this.player.texture.key!==pose)this.player.setTexture(pose);
    if(this.keys.F.isDown&&!this._mine){this._mine=true;this.mine();}if(!this.keys.F.isDown)this._mine=false;
    if(this.boss?.active)this.boss.update(this.player,delta);for(const e of this.enemies){if(!e.active)continue;e.attackClock+=delta;const dx=this.player.x-e.x,dy=this.player.y-e.y,distance=Math.hypot(dx,dy);if(distance<420){e.setVelocityX(Math.sign(dx)*48);e.y+=Math.sin(this.time.now/130+e.x)*.18;if(distance<25&&e.attackClock>1000){e.attackClock=0;this.player.takeDamage?.(5);}}else e.setVelocityX(Math.sin(this.time.now/500+e.x)*15);}
    for(const shot of this.shots){if(!shot.active)continue;shot.life-=delta/1000;if(shot.life<=0||this.isSolid(Math.floor(shot.x/TILE),Math.floor(shot.y/TILE))){shot.destroy();continue;}if(this.boss?.active&&Phaser.Math.Distance.Between(shot.x,shot.y,this.boss.x,this.boss.y)<24){this.hitBoss(shot.damage);shot.destroy();continue;}const target=this.enemies.find(e=>e.active&&e.hp>0&&Phaser.Math.Distance.Between(shot.x,shot.y,e.x,e.y)<18);if(target){this.hitEnemy(target,shot.damage);shot.destroy();}}
