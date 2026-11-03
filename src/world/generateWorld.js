@@ -12,6 +12,30 @@ function seeded(seed) {
   };
 }
 
+function valueNoise(random, x, step, cache) {
+  const left = Math.floor(x / step);
+  const blend = (x / step) - left;
+  const smooth = blend * blend * (3 - 2 * blend);
+  if (!cache.has(left)) cache.set(left, random() * 2 - 1);
+  if (!cache.has(left + 1)) cache.set(left + 1, random() * 2 - 1);
+  return cache.get(left) * (1 - smooth) + cache.get(left + 1) * smooth;
+}
+
+function lattice(x, y, seed) {
+  let n = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + seed) | 0;
+  n = Math.imul(n ^ n >>> 13, 1274126177);
+  return ((n ^ n >>> 16) >>> 0) / 2147483648 - 1;
+}
+
+function valueNoise2D(x, y, size, seed) {
+  const gx = x / size, gy = y / size, ix = Math.floor(gx), iy = Math.floor(gy);
+  const fx = gx - ix, fy = gy - iy;
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+  const top = lattice(ix, iy, seed) * (1 - sx) + lattice(ix + 1, iy, seed) * sx;
+  const bottom = lattice(ix, iy + 1, seed) * (1 - sx) + lattice(ix + 1, iy + 1, seed) * sx;
+  return top * (1 - sy) + bottom * sy;
+}
+
 export function generateWorld(seed = 'nocturne', options = {}) {
   const width = Math.max(360, Math.floor(options.width ?? 720));
   const height = Math.max(100, Math.floor(options.height ?? 180));
@@ -21,13 +45,19 @@ export function generateWorld(seed = 'nocturne', options = {}) {
   const regionWidth = width / 12;
   const biomeNames = ['Emerald Wilds', 'Amber Dunes', 'Frostveil', 'Mossfen', 'Crimson Reach', 'Ashen Vale', 'Moonlit Grove', 'Sunken Coast', 'Obsidian Crown', 'Crystal Hollow', 'Stormbreak', 'Ebon March'];
   const biomes = Array.from({ length: 12 }, (_, i) => ({ id: `biome-${i + 1}`, name: biomeNames[i], startX: Math.floor(i * regionWidth), endX: Math.floor((i + 1) * regionWidth), palette: i }));
-  let surface = Math.floor(height * 0.34) + Math.floor(random() * 5);
+  const broadNoise = new Map(), detailNoise = new Map(), pebbleNoise = new Map();
+  const baseSurface = height * 0.34;
   for (let x = 0; x < width; x++) {
-    if (random() < 0.48) surface += random() < 0.5 ? -1 : 1;
-    surface = Math.max(8, Math.min(Math.floor(height * 0.48), surface));
+    const biome = Math.floor(x / regionWidth);
+    const broad = valueNoise(random, x, 74, broadNoise) * 7.5;
+    const detail = valueNoise(random, x, 23, detailNoise) * 2.6;
+    const grain = valueNoise(random, x, 7, pebbleNoise) * 0.7;
+    const ridge = Math.sin(x / 97 + biome * 1.4) * 2.8 + Math.sin(x / 31 + biome) * 1.2;
+    const surface = Math.max(8, Math.min(Math.floor(height * 0.47), Math.round(baseSurface + broad + detail + grain + ridge)));
     surfaceHeights[x] = surface;
     for (let y = surface; y < height; y++) {
-      tiles[y * width + x] = y === surface ? TileId.GRASS : (y < surface + 6 ? TileId.SOIL : TileId.STONE);
+      const depth = y - surface;
+      tiles[y * width + x] = depth === 0 ? TileId.GRASS : (depth < 5 ? TileId.SOIL : TileId.STONE);
     }
   }
 
@@ -41,18 +71,29 @@ export function generateWorld(seed = 'nocturne', options = {}) {
     }
   };
 
-  const tunnelY = Math.min(height - 12, Math.max(Math.floor(height * 0.63), 62));
+  const tunnelY = Math.min(height - 12, Math.max(Math.floor(height * 0.56), 54));
   let y = surfaceHeights[4] + 1;
   for (let x = 4; x < width - 4; x++) {
     const targetY = x < 20 ? Math.min(tunnelY, surfaceHeights[4] + (x - 4) * 2) : tunnelY + Math.round(Math.sin(x / 23) * 2);
     if (y < targetY) y++;
     else if (y > targetY) y--;
-    chamber(x, y, 2, 2);
-    if (random() < 0.025) chamber(x, y + Math.floor(random() * 6) - 2, 4 + Math.floor(random() * 4), 3 + Math.floor(random() * 3));
+    chamber(x, y, 3, 2);
+    if (random() < 0.055) chamber(x, y + Math.floor(random() * 9) - 4, 5 + Math.floor(random() * 6), 3 + Math.floor(random() * 5));
   }
   // A surface entrance joins the connected underground corridor.
   let entranceY = surfaceHeights[4] + 1;
   for (; entranceY <= tunnelY; entranceY++) chamber(4, entranceY, 1, 1);
+
+  // Carve natural pockets into the deep layers, leaving plenty of continuous rock between them.
+  const caveSeed = Math.floor(random() * 0x7fffffff);
+  for (let x = 0; x < width; x++) {
+    for (let y = surfaceHeights[x] + 9; y < height - 5; y++) {
+      const broad = valueNoise2D(x, y, 42, caveSeed);
+      const detail = valueNoise2D(x, y, 18, caveSeed ^ 0x5f356495);
+      const depthBias = Math.min(0.16, (y - surfaceHeights[x]) / height * 0.13);
+      if (broad * 0.74 + detail * 0.26 > 0.3 + depthBias) air(x, y);
+    }
+  }
 
   const dungeons = biomes.map((biome, i) => {
     const min = biome.startX + 8, max = biome.endX - 9;
@@ -79,6 +120,7 @@ export function generateWorld(seed = 'nocturne', options = {}) {
 
   return { seed: String(seed), width, height, tiles, surfaceHeights, biomes, dungeons };
 }
+
 
 
 
