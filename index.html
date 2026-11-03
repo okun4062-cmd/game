@@ -340,6 +340,41 @@ function bossFire(){
  }
  sfx(85+k*8,.15,'triangle',.023);
 }
+
+const PIT_OFFSETS=[[335,80],[1230,105],[1960,92]];
+function pitAt(worldX){
+ const s=Math.max(0,Math.floor(worldX/ZONE)),offset=worldX-s*ZONE;
+ return PIT_OFFSETS.find(([a,w])=>offset>=a&&offset<a+w)||null;
+}
+function drawPits(st){
+ const b=biome(st);
+ for(let scene=Math.max(0,st-1);scene<=st+1;scene++){
+  for(let j=0;j<PIT_OFFSETS.length;j++){
+   const [off,w]=PIT_OFFSETS[j],x=scene*ZONE+off-cam;
+   if(x>W+20||x+w<-20)continue;
+   rect(x,G-1,w,H-G+1,'#05060e');
+   const chasm=ctx.createLinearGradient(0,G,0,H);
+   chasm.addColorStop(0,b.sky);chasm.addColorStop(1,'#010207');
+   ctx.fillStyle=chasm;ctx.fillRect(x,G,w,H-G);
+   rect(x-4,G-2,7,5,b.light+'cc');
+   rect(x+w-3,G-2,7,5,b.light+'cc');
+   rect(x+3,G+5,3,H-G-5,b.light+'42');
+   rect(x+w-5,G+5,3,H-G-5,b.light+'42');
+   for(let k=0;k<5;k++){
+    const xx=x+9+k*(w-18)/4,h=6+(k%3)*8;
+    ctx.fillStyle=b.light+'34';ctx.beginPath();
+    ctx.moveTo(xx,H);ctx.lineTo(xx+4,H-h);ctx.lineTo(xx+8,H);
+    ctx.closePath();ctx.fill();
+   }
+   // Floating splinters signal a dangerous jump ahead.
+   for(let i=0;i<3;i++){
+    const xx=x+5+i*w/3,yy=G-18+Math.sin(tick*.045+i+j)*3;
+    circle(xx,yy,1,b.light+'ca');line(xx,yy+2,xx+1,yy+6,b.light+'45');
+   }
+  }
+ }
+}
+
 function treasurePos(st,j){
  const offsets=[480,1070,1430,2150,2440];
  return {x:st*ZONE+offsets[j],y:j===1||j===3?G-87:G-27};
@@ -490,7 +525,7 @@ function update(){
  if(press.dash&&p.dashCd<=0){p.dash=10;p.dashCd=65;p.vy=0;p.inv=Math.max(p.inv,11);sfx(340,.09,'sawtooth',.026);particle(p.x,p.y+10,14,'#d0d8ff')}
  if(press.jump&&p.jumps<2){p.vy=p.jumps===0?-6.9:-6.3;p.jumps++;p.ground=false;particle(p.x+6,p.y+22,10,theme.light);sfx(p.jumps===1?330:470,.09)}
  p.vy=clamp(p.vy+.29,-9,7);p.x+=p.vx;p.y+=p.vy;p.ground=false;
- if(p.y+p.h>=G){p.y=G-p.h;p.vy=0;p.ground=true;p.jumps=0}
+ if(p.y+p.h>=G&&!pitAt(p.x+p.w/2)){p.y=G-p.h;p.vy=0;p.ground=true;p.jumps=0}
  levelPlatforms();
  if(p.y>H+30)damage(99,p.x-100);
  p.x=Math.max(0,p.x);
@@ -881,7 +916,51 @@ function drawBoss(){
   for(let i=0;i<9;i++){let a=i*TAU/9+ph*.013;let rr=41+Math.sin(ph*.1+i)*4;line(Math.cos(a)*29,31+Math.sin(a)*29,Math.cos(a)*rr,31+Math.sin(a)*rr,c,3)}
   circle(0,31,11,c);circle(0,31,7,'#080912');circle(0,31,2,'#fff');
  }
- ctx.restore();
+ 
+  // Specialized crowns and elemental signatures distinguish every legendary guardian.
+  if(kind===5){ // Blackwing has a raven's beak, not a widow's mask.
+   ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(0,14);ctx.lineTo(19,23);ctx.lineTo(0,25);ctx.fill();
+   for(let i=0;i<4;i++)line(-34-i*4,15+i*7,-50-i*5,8+i*8,c+'9a',2);
+  }else if(kind===6){ // Clockwork face of the Chronophage
+   circle(0,31,20,c+'b5');circle(0,31,15,'#0e1220');
+   for(let i=0;i<12;i++){const a=i*TAU/12+ph*.01;rect(Math.cos(a)*12-1,31+Math.sin(a)*12-1,2,2,c)}
+   line(0,31,9,21,c,2);line(0,31,-5,25,'#f6f4e8',2);
+  }else if(kind===8){ // Thunder serpent with branching horns.
+   for(let i of [-1,1]){
+    line(i*10,4,i*27,-10,c,3);line(i*27,-10,i*17,-24,c,2);
+    line(i*15,16,i*32,26,c+'a0',2);
+   }
+   circle(0,10,9,c+'80');
+  }else if(kind===9){ // Paladin's ossuary shield and ribs
+   rect(-17,31,34,29,'#b3a398');rect(-14,34,28,22,'#241c21');
+   for(let i=0;i<4;i++){rect(-12,36+i*5,24,2,c+'c8');rect(-2,36+i*5,4,5,'#120f18')}
+   rect(-29,27,9,35,c+'bf');rect(-31,22,13,8,'#f1e3d2');
+  }else if(kind===10){ // King of the eclipse, black burning corona
+   circle(0,25,34,c+'3a');circle(0,25,26,'#11111c');
+   circle(0,25,18,c+'cf');circle(0,25,14,'#080915');
+   for(let j=0;j<8;j++){
+    const a=ph*.018+j*TAU/8;
+    line(Math.cos(a)*31,25+Math.sin(a)*31,Math.cos(a)*44,25+Math.sin(a)*44,c+'ba',2);
+   }
+  }else if(kind===4){ // Deep guardian's phosphorescent antlers
+   for(let i of [-1,1]){
+    line(i*7,0,i*23,-12,c+'a2',3);line(i*23,-12,i*20,-21,c+'a2',2);
+    line(i*23,-12,i*34,-15,c+'a2',2);
+   }
+  }else if(kind===3){ // Crystal Queen grows enormous prismatic wings
+   for(let i of [-1,1]){
+    ctx.fillStyle=c+'6d';ctx.beginPath();
+    ctx.moveTo(i*16,26);ctx.lineTo(i*45,-9);ctx.lineTo(i*36,43);
+    ctx.lineTo(i*18,55);ctx.fill();
+    line(i*16,26,i*41,2,'#ffffff80',1);
+   }
+  }else if(kind===7){
+   for(let i=0;i<7;i++){
+    let a=i*TAU/7+ph*.012;
+    circle(Math.cos(a)*40,29+Math.sin(a)*37,3,c+'b8');
+   }
+  }
+  ctx.restore();
  // boss shadow and health bar rendered in HUD
 }
 function drawShots(){
@@ -933,7 +1012,7 @@ function render(){
  if(!p){p=makePlayer(50)}
  let st=stageId(),shift=shake>0?Math.round((rnd(tick*1.7)-.5)*shake):0;
  ctx.save();ctx.translate(shift,Math.round((rnd(tick+2)-.5)*shake*.4));
- sky(st);ground(st);arena();platforms();drawAdventure(st);
+ sky(st);ground(st);drawPits(st);arena();platforms();drawAdventure(st);
  for(const e of enemy)if(e.hp>0)drawEnemy(e);
  drawBoss();drawShots();
  for(const q of particles){ctx.globalAlpha=clamp(q.life/20,0,1);rect(q.x-cam,q.y,2,2,q.c)}ctx.globalAlpha=1;
