@@ -492,36 +492,211 @@ function update(){
  Object.keys(press).forEach(k=>press[k]=0);
 }
 function sky(st){
- const b=biome(st),grad=ctx.createLinearGradient(0,0,0,G);grad.addColorStop(0,b.sky);grad.addColorStop(1,b.far);ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
- for(let i=0;i<105;i++){let wx=i*89+rnd(0,70,i*16),x=wx-cam*.15;x=((x%620)+620)%620-70;let y=rng(8,168,i*21);rect(x,y,1+(i%11===0?1:0),1,i%4===0?b.light+'99':'#bac2d866')}
- let mx=W*.7+(st%3-1)*55-cam*.017%130,my=55+(st%2)*22;
- circle(mx,my,23,b.light+'13');circle(mx,my,17,b.light+'25');circle(mx,my,12,b.light+'8a');circle(mx+3,my-3,8,b.sky);
- for(let layer=0;layer<2;layer++){
-  let speed=layer===0?.24:.45,step=75,off=-(cam*speed)%step;
-  for(let i=-1;i<10;i++){let n=Math.floor(cam*speed/step)+i,x=i*step+off,h=rng(28,105,n*6+layer*101);
-   let tint=layer===0?b.far:b.near;
-   rect(x,G-48-h*.65,step+2,h,tint);
-   if(layer===0){rect(x+12,G-52-h*.65-13,5,13,tint);rect(x+10,G-52-h*.65-4,10,4,tint)}
-   else{rect(x+11,G-44-h*.65-11,3,11,b.light+'55');rect(x+34,G-40-h*.65-6,3,6,'#c1b6ae44')}
+ const b=biome(st),grad=ctx.createLinearGradient(0,0,0,G);
+ grad.addColorStop(0,b.sky);grad.addColorStop(.47,b.far);grad.addColorStop(1,b.near);
+ ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+ // Atmospheric nebulae behind the horizon.
+ for(let k=0;k<3;k++){
+  const x=W*(.18+.29*k)+Math.sin(tick*.0015+k*2+st)*17;
+  const y=42+k*35;
+  const ag=ctx.createRadialGradient(x,y,2,x,y,145);
+  ag.addColorStop(0,b.light+(k===1?'13':'0a'));ag.addColorStop(1,b.light+'00');
+  ctx.fillStyle=ag;ctx.fillRect(x-145,y-145,290,290);
+ }
+ // Animated stars in the cold upper sky.
+ for(let i=0;i<83;i++){
+  let x=((i*137+rnd(i*23+st)*170-cam*.08)%(W+90)+(W+90))%(W+90)-40;
+  let y=3+rnd(i*17+st*31)*135;
+  let a=Math.floor(45+Math.abs(Math.sin(tick*.015+i*7))*80).toString(16).padStart(2,'0');
+  rect(x,y,i%15===0?2:1,i%23===0?2:1,i%9===0?b.light+a:'#dddaef'+a);
+  if(i%27===0){line(x-3,y,x+4,y,b.light+'4b');line(x,y-3,x,y+4,b.light+'4b')}
+ }
+ const mx=W*.70+(st%3-1)*42-Math.sin(cam*.0007)*13,my=49+(st%3)*10;
+ // Moon / sun, varies by biome.
+ const halo=ctx.createRadialGradient(mx,my,2,mx,my,94);
+ halo.addColorStop(0,b.light+'33');halo.addColorStop(.22,b.light+'1d');halo.addColorStop(.65,b.light+'09');halo.addColorStop(1,b.light+'00');
+ ctx.fillStyle=halo;ctx.fillRect(mx-95,my-95,190,190);
+ if(st%12===11){circle(mx,my,27,b.light+'a8');circle(mx,my,23,'#080b15');circle(mx,my,17,'#050611');
+  for(let i=0;i<14;i++){let a=i*TAU/14+tick*.004;line(mx+Math.cos(a)*29,my+Math.sin(a)*25,mx+Math.cos(a)*39,my+Math.sin(a)*35,b.light+'80',i%4?1:2)}
+ }else if(st%12===10){circle(mx,my,27,b.light+'55');circle(mx,my,23,'#090a13');circle(mx,my,16,b.light+'38');circle(mx,my,15,'#090a13')}
+ else{circle(mx,my,20,b.light+'30');circle(mx,my,16,b.light+'95');circle(mx+6,my-5,14,b.sky);
+  for(let i=0;i<5;i++)circle(mx+(rnd(i*37+st)-.5)*16,my+(rnd(i*38+st)-.5)*16,rnd(i+st)>0.55?1:2,b.light+'28');
+ }
+ // Three sets of distant architecture create a sense of depth.
+ horizonLayer(st,b,0,.13,153,45,b.far);
+ horizonLayer(st,b,1,.27,185,62,b.near);
+ horizonLayer(st,b,2,.47,211,50,b.stone);
+ // Atmospheric god-rays cast from the moon and old ruins.
+ ctx.save();ctx.globalCompositeOperation='screen';
+ for(let k=0;k<5;k++){
+  let bx=mx+(k-2)*17, ex=mx+(k-2)*100+Math.sin(tick*.003+k)*12;
+  const g=ctx.createLinearGradient(bx,my+10,ex,G);
+  g.addColorStop(0,b.light+'1e');g.addColorStop(1,b.light+'00');
+  ctx.fillStyle=g;ctx.beginPath();
+  ctx.moveTo(bx-3,my+15);ctx.lineTo(bx+3,my+15);ctx.lineTo(ex+29,G);ctx.lineTo(ex-29,G);
+  ctx.closePath();ctx.fill();
+ }
+ ctx.restore();
+ // Motion fog bands and drifting environmental particles.
+ for(let i=0;i<7;i++){
+  let y=169+i*7+Math.sin(tick*.01+i*11)*3,x=((i*103-cam*(.12+i*.015))%740+740)%740-110;
+  let fog=ctx.createLinearGradient(x,y,x+200,y);
+  fog.addColorStop(0,b.far+'00');fog.addColorStop(.5,b.light+'0b');fog.addColorStop(1,b.light+'00');
+  ctx.fillStyle=fog;ctx.fillRect(x,y,200,5+(i%3)*3);
+ }
+ weather(st,b);
+}
+function horizonLayer(st,b,layer,speed,base,height,color){
+ const step=layer===0?94:layer===1?76:62;
+ const off=Math.floor(cam*speed/step),shift=cam*speed%step;
+ for(let i=-2;i<W/step+3;i++){
+  const n=i+off,x=i*step-shift;
+  const h=height*(.43+rnd(n*17+layer*101+st)*1.04);
+  rect(x,base-h,step+2,G-(base-h),color);
+  if(layer===0){
+   // far-away fortress silhouettes, skyline turrets, glass bridges
+   const cap=base-h;
+   rect(x+step*.18,cap-14,step*.19,14,color);rect(x+step*.15,cap-17,step*.26,3,color);
+   rect(x+step*.71,cap-8,step*.10,8,color);
+   if(n%4===0){rect(x+step*.46,cap-31,5,31,color);rect(x+step*.4,cap-34,16,4,color)}
+  }else if(layer===1){
+   // architectural rhythm changes between 12 worlds
+   detailSilhouette(st,n,x,base-h,step,h,color,b,layer);
+  }else{
+   // foreground spires and broken arches; etched seams catch the light.
+   rect(x+step*.2,base-h-7,4,7,color);
+   if(n%3===0){rect(x+step*.58,base-h-19,7,19,color);rect(x+step*.55,base-h-22,13,4,color)}
+   if(n%4!==0){
+    for(let k=0;k<3;k++){let yy=base-h+12+k*14;rect(x+11,yy,3,6,b.light+(layer===2?'36':'29'));rect(x+33,yy+4,2,4,b.light+'29')}
+   }
   }
  }
 }
+function detailSilhouette(st,n,x,top,width,height,color,b,layer){
+ const k=st%12;
+ if(k===1||k===7){
+  // impossible forests, hanging blossoms
+  let tx=x+width*.43;
+  rect(tx-4,top-31,8,33,color);rect(tx-19,top-23,38,6,color);
+  rect(tx-13,top-36,26,11,color);rect(tx-8,top-48,16,15,color);
+  for(let j=0;j<4;j++){let bx=tx+(j-1.5)*9,yy=top-42+Math.sin(tick*.015+j+n)*3;circle(bx,yy,2,b.light+'45')}
+ }else if(k===2||k===6){
+  // forge chimneys and the clockworks
+  rect(x+9,top-20,10,21,color);rect(x+29,top-45,13,46,color);
+  rect(x+27,top-49,17,5,color);
+  if(k===6){circle(x+48,top+16,10,color);circle(x+48,top+16,6,b.light+'26')}
+  else{rect(x+33,top-57,4,14,b.light+'2a')}
+ }else if(k===3||k===4){
+  // crystal pillars and submerged arches
+  for(let i=0;i<3;i++){
+   let bx=x+10+i*18;
+   ctx.fillStyle=color;ctx.beginPath();
+   ctx.moveTo(bx,top);ctx.lineTo(bx+5,top-24-rnd(n+i)*17);ctx.lineTo(bx+11,top-14);
+   ctx.lineTo(bx+14,top);ctx.closePath();ctx.fill();
+  }
+ }else if(k===8){
+  // violent storm, aerial towers
+  rect(x+24,top-49,8,51,color);rect(x+21,top-53,14,6,color);
+  line(x+28,top-53,x+28,top-69,b.light+'35',2);
+ }else if(k===9){
+  // ossuary
+  rect(x+14,top-13,34,15,color);circle(x+31,top-15,11,color);
+  rect(x+23,top-5,16,10,b.light+'25');
+ }else{
+  // cathedral towers, broken bridges, clockless ruins
+  rect(x+width*.29,top-31,width*.32,31,color);
+  rect(x+width*.21,top-35,width*.48,5,color);
+  rect(x+width*.36,top-44,width*.18,10,color);
+  rect(x+width*.4,top-49,width*.1,5,color);
+ }
+}
+function weather(st,b){
+ const kind=st%12;
+ for(let i=0;i<32;i++){
+  const seed=i*67+st*501;
+  const speed=kind===2||kind===5?(.85+rnd(seed+2)):(kind===8?1.6:.45);
+  const x=((rnd(seed)*750+tick*(kind===8?-.45:(kind%2?.2:-.13)))%700+700)%700-100;
+  const y=((rnd(seed+1)*360+tick*speed)%310+310)%310-20;
+  const cc=kind===2?'#ff947c':kind===1||kind===7?'#c3ffcc':b.light;
+  if(kind===8&&i%5===0){
+   line(x,y,x-4,y+14,cc+'50');line(x-4,y+14,x-2,y+17,cc+'30');
+  }else{
+   rect(x,y,i%8===0?2:1,i%11===0?2:1,cc+(kind===2?'8c':'50'));
+   if(i%13===0)circle(x,y,7,cc+'0b');
+  }
+ }
+ if(kind===8&&tick%270<4){
+  ctx.fillStyle='#b2caff14';ctx.fillRect(0,0,W,H);
+  let x=290+Math.sin(tick*.6)*50;
+  line(x,-5,x-16,48,'#b2dbff9a',2);line(x-16,48,x+5,84,'#b2dbff8e',2);
+  line(x+5,84,x-9,133,'#b2dbff70',2);
+ }
+}
 function ground(st){
- let b=biome(st);rect(0,G,W,H-G,b.stone);
- rect(0,G,W,3,b.light+'88');rect(0,G+3,W,5,'#070b16aa');
- let left=Math.floor(cam/19)-2,right=left+30;
- for(let k=left;k<=right;k++){let x=k*19-cam,y=G+4;
- rect(x,y+1,18,15,k%2?b.stone:b.near);rect(x,y+19,17,17,'#17172588');
- if(rnd(k*17)>0.55)rect(x+3,y+1,7,1,'#ffffff22');
- if(k%3===0){rect(x-2,y-7,2,7,b.light+'55');rect(x-4,y-7,7,1,b.light+'aa')}
+ const b=biome(st),kind=st%12;
+ const topGrad=ctx.createLinearGradient(0,G,0,H);
+ topGrad.addColorStop(0,b.near);topGrad.addColorStop(.2,b.stone);topGrad.addColorStop(1,'#10121d');
+ ctx.fillStyle=topGrad;ctx.fillRect(0,G,W,H-G);
+ rect(0,G,W,2,b.light+'90');rect(0,G+2,W,3,'#070813af');
+ let left=Math.floor(cam/17)-2,right=left+32;
+ for(let k=left;k<=right;k++){
+  let x=k*17-cam,y=G+5;
+  rect(x+1,y+(k%3)*2,15,12,k%2?b.stone:b.near);
+  rect(x+1,y+17+(k%3)*2,15,11,'#171925');
+  rect(x+2,y+7,12,1,'#090d1780');
+  if(rnd(k*13)>0.62){rect(x+2,y+1,9,1,b.light+'36');rect(x+13,y+3,1,6,'#03050a44')}
+  if(k%11===0)rect(x-3,G-3,21,1,b.light+'8a');
+  if(k%7===0){const yy=G-6-rnd(k+st)*5;rect(x+5,yy,2,G-yy,b.light+'44');rect(x+2,yy+2,7,1,b.light+'62')}
+  if(kind===2&&k%7===0)rect(x+3,G+16,12,2,'#ffaf8c6c');
+  if(kind===3&&k%9===0)rect(x+4,G+11,4,7,b.light+'92');
+ }
+ // Broken flooring, floating ash and environmental flora
+ for(let i=0;i<21;i++){
+  const n=Math.floor(cam/27)+i-2,x=n*27-cam;
+  if(rnd(n*37+st)<.36)continue;
+  if(kind===1||kind===7){
+   rect(x+9,G-10,2,10,b.light+'5b');
+   circle(x+7,G-12,2,b.light+'96');circle(x+11,G-15,3,b.light+'82');
+  }else if(kind===3||kind===4){
+   rect(x+8,G-9,3,10,b.light+'74');rect(x+6,G-13,6,7,b.light+'74');
+  }else if(kind===9){
+   line(x+6,G-2,x+10,G-10,b.light+'5b',2);
+   line(x+10,G-10,x+13,G-8,b.light+'5b');
+  }else if(kind===2){
+   rect(x+5,G-5,3,5,b.light+'66');rect(x+13,G-3,2,3,'#ffbb8c6a');
+  }else if(n%5===0){
+   rect(x+8,G-5,1,5,b.light+'7b');rect(x+5,G-6,7,1,b.light+'55');
+  }
  }
 }
 function platforms(){
- let left=Math.floor(cam/145)-1;
- for(let n=left;n<left+6;n++){if(n%3===0)continue;let x=n*145+20-cam,y=n%2?G-55:G-75,b=biome(Math.max(0,Math.floor((n*145+20)/ZONE)));
- rect(x,y,90,6,b.stone);rect(x,y,90,2,b.light+'a0');
- for(let j=0;j<6;j++)rect(x+j*15+3,y+4,1,4,'#090b18');
- rect(x+4,y-1,3,1,b.light);rect(x+81,y-1,3,1,b.light);
+ let left=Math.floor(cam/145)-2;
+ for(let n=left;n<left+7;n++){
+  if(n%3===0)continue;
+  let x=n*145+20-cam,y=n%2?G-55:G-75;
+  const st=Math.max(0,Math.floor((n*145+20)/ZONE)),b=biome(st),k=st%12;
+  rect(x-2,y+3,96,8,'#0608108a');
+  rect(x,y,90,6,b.stone);rect(x,y,90,2,b.light+'ba');
+  for(let j=0;j<6;j++){
+   rect(x+j*15+3,y+4,1,4,'#090b18');
+   if(j%3===0)rect(x+j*15+5,y-1,5,1,b.light+'6e');
+  }
+  if(k===1||k===7){
+   for(let j=0;j<3;j++){
+    rect(x+12+j*27,y-6,2,6,b.light+'8a');
+    rect(x+11+j*27,y-8,5,3,b.light+'8a');
+   }
+  }else if(k===3){
+   for(let j=0;j<3;j++){
+    ctx.fillStyle=b.light+'77';ctx.beginPath();ctx.moveTo(x+12+j*28,y);
+    ctx.lineTo(x+14+j*28,y-13);ctx.lineTo(x+19+j*28,y);ctx.fill();
+   }
+  }else if(k===2||k===6){
+   for(let j=0;j<3;j++){rect(x+12+j*25,y-4,3,4,b.light+'a0');rect(x+12+j*25,y+6,1,7,b.light+'50')}
+  }else{
+   rect(x+10,y-2,4,2,b.light+'76');rect(x+80,y-2,5,2,b.light+'76');
+  }
+  for(let j=0;j<5;j++)if(j%2===0)line(x+j*17+10,y+6,x+j*17+11,y+11+j%3,b.light+'32');
  }
 }
 function arena(){
@@ -529,12 +704,40 @@ function arena(){
  for(let z=first;z<=last;z++){
   let start=z*ZONE+ZONE-615-cam,end=z*ZONE+ZONE-45-cam,b=biome(z);
   if(end<0||start>W)continue;
-  rect(start,G-126,8,126,b.stone);rect(end,G-126,8,126,b.stone);
-  rect(start-6,G-130,20,7,b.light+'99');rect(end-6,G-130,20,7,b.light+'99');
-  for(let j=0;j<4;j++){let x=start+45+j*122;rect(x,G-110,3,110,b.light+'30');rect(x-8,G-112,20,3,b.light+'50');rect(x+5,G-94,1,38,b.light+'55')}
-  for(let j=0;j<8;j++){let xx=start+28+j*62;circle(xx,G-132+Math.sin(tick*.025+j)*2,2,b.light+'b3')}
-  if(gate&&boss&&boss.stage===z){rect(start+7,G-85,3,85,b.light+'b0');rect(end-4,G-85,3,85,b.light+'b0');
-   for(let k=0;k<9;k++){rect(start+8,G-86+k*10,2,5,'#fff9');rect(end-4,G-86+k*10,2,5,'#fff9')}
+  // monumental boss chamber floor, heavy ancient stone frame
+  rect(start,G-139,8,139,b.stone);rect(end,G-139,8,139,b.stone);
+  rect(start-8,G-143,24,9,b.light+'9e');rect(end-8,G-143,24,9,b.light+'9e');
+  rect(start+8,G-143,end-start-8,3,b.light+'22');
+  rect(start+9,G-140,end-start-10,3,'#0a0b1780');
+  for(let j=0;j<6;j++){
+   let x=start+37+j*90;
+   rect(x,G-119,7,119,b.near);rect(x-6,G-122,19,7,b.light+'4e');
+   rect(x+2,G-107,2,85,b.light+'2c');
+   rect(x-3,G-91,13,3,b.light+'26');
+   for(let k=0;k<3;k++)rect(x-1,G-104+k*28,4,3,b.light+'36');
+  }
+  // suspended runes, moving like chandeliers
+  for(let j=0;j<10;j++){
+   let xx=start+28+j*55,yy=G-143+Math.sin(tick*.03+j)*3;
+   circle(xx,yy,3,b.light+'a8');circle(xx,yy,8,b.light+'19');
+   if(j%3===0){line(xx,G-141,xx,yy+21,b.light+'3d');rect(xx-3,yy+20,7,3,b.light+'68')}
+  }
+  // two huge boss statues at the edges of the arena
+  for(const x of [start+18,end-18]){
+   circle(x,G-101,17,b.light+'22');rect(x-10,G-98,20,41,b.near);
+   rect(x-11,G-104,22,12,b.stone);rect(x-6,G-108,12,7,b.light+'69');
+   rect(x-5,G-94,3,3,b.light);rect(x+3,G-94,3,3,b.light);
+   rect(x-9,G-56,18,23,b.stone);
+  }
+  const winner=defeated>z;
+  if(gate&&boss&&boss.stage===z){
+   rect(start+8,G-112,4,112,b.light+'b0');rect(end-4,G-112,4,112,b.light+'b0');
+   for(let k=0;k<12;k++){
+    rect(start+8,G-113+k*10,3,5,'#ffffffa8');
+    rect(end-4,G-113+k*10,3,5,'#ffffffa8');
+   }
+  }else if(winner){
+   circle(end-4,G-80,25,b.light+'1d');circle(end-4,G-80,6,b.light+'b8');
   }
  }
 }
