@@ -1,6 +1,6 @@
-import { generateWorld, TileId } from '../world/generateWorld.js';
+import { generateWorld, TileId } from '../world/generateWorld.js?v=20261103-physics1';
 import { ChunkManager } from '../world/ChunkManager.js';
-import { createPixelChunk } from '../world/PixelTiles.js';
+import { createPixelChunk } from '../world/PixelTiles.js?v=20261103-physics1';
 import { SaveSystem, SAVE_KEY, LEGACY_SAVE_KEY } from '../systems/SaveSystem.js';
 import { primaryAction } from '../systems/CombatSystem.js';
 import { createInventory, craft, equip } from '../systems/InventorySystem.js';
