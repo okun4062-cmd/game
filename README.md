@@ -1,61 +1,31 @@
-# 🌘 NOCTURNE III · THE FORGE & THE DEEP
+# NOCTURNE · The Open Deep
 
-### 🎮 [Играть онлайн на GitHub Pages](https://okun4062-cmd.github.io/game/index.html)
+A browser pixel adventure built with Phaser 4.2.1. Explore a seeded open world of twelve biomes, connected caverns, mining veins, craftable weapons, roaming creatures, and one guardian dungeon per biome.
 
-**Бесконечная браузерная пиксельная action-adventure с огромной шахтой, добычей ресурсов, крафтом, экипировкой, боссами и сохранениями.** Никаких сборок или серверов — все файлы уже в корне репозитория.
+## Play
 
-## 🔥 Что вошло в большое обновление
+Open the GitHub Pages build: https://okun4062-cmd.github.io/game/
 
-**Шахта:** горизонтально бесконечный процедурный мир с **172 слоями по глубине**, пещерами, массивными рудными жилами, богатым месторождениями с перезарядкой и подземными существами. Добычу можно вести киркой справа, слева, вниз и вверх.
+- **A / D** or **← / →** — move
+- **Space / W / ↑** — jump
+- **Left mouse button** — swing at the cursor, or shoot the equipped pistol toward the cursor's world position
+- **F** — mine the block under the cursor
+- **E** — awaken a nearby dungeon altar
+- **C** — craft a pistol or ammunition from gathered materials
+- **1 / 2** — equip the blade or pistol
+- **I** — open the inventory
+- Touch controls appear on phones and tablets.
 
-**Инвентарь и крафт:** сумка с 11 типами материалов и 17 рецептами оружия, брони, кирок, эликсиров и патронов. Создай рудничный самострел или Резонатор Бездны; патроны расходуются при каждом выстреле. В шахте появились деревянные крепи, фактурные породы, сталактиты, светящиеся лужи и динамическое освещение от фонарей.
+The new world is generated from a seed and saved in local storage. Dungeon guardians can only be awakened at their altar. Each dungeon has a unique guardian; after its defeat the clear is permanent and that guardian cannot spawn again.
 
-**Прокачка:** медь → железо → кристаллы → тёмная руда. Редкие руды требуют более мощной кирки. Урон зависит от оружия, получаемый урон уменьшается бронёй. Лечение — эликсирами.
+Older NOCTURNE saves are read from `nocturne-eclipse-save-v2`; material bags, ammunition, owned weapons, equipped weapon, and defeated guardian progress are carried into the new world where available.
 
-**Гринд:** повторяемые богатые месторождения в пещерах, наземные рудные точки, лут с обычных врагов, элитных стражей и боссов.
+## Develop
 
-**Сложность:** боссы имеют непрерывно растущее здоровье, а их атаки причиняют возрастающий урон в поздних мирах. 12 типов боссов и бесконечное их чередование с усилением.
+No build step is required. Serve this directory over HTTP and open `index.html`; Phaser is loaded from its pinned jsDelivr CDN URL. Run the pure-system tests with:
 
-**Сохранение:** добытые ресурсы, прокачка, сделанное снаряжение, вскрытые блоки шахты (до 12 тысяч последних), маяки, победы над боссами и коллекционные предметы сохраняются в браузере. Совместимо с сохранениями предыдущей версии.
+```sh
+node --test
+```
 
-## 🎮 Управление
-
-| Действие | ПК | Телефон |
-|---|---|---|
-| Передвижение | A/D, ←/→ | ◀ / ▶ |
-| Прыжок / двойной прыжок | Space, W, ↑ | ↑ |
-| Атака мечом / выстрел из экипированного оружия | J / X | ⚔ |
-| **Стрельба по прицелу мыши** | **Навести курсор и кликнуть по шахте** | — |
-| Рывок | Shift / C / K | ◆ |
-| **Копать** | **F (удерживать)** | **⛏ (удерживать)** |
-| **Копать вниз** | **S / ↓ + F** | **▼ + ⛏** |
-| Копать вверх | ↑ / W + F | ↑ + ⛏ |
-| Вход / выход из шахты | E | кнопка «⛏ В шахту» |
-| **Инвентарь** | **I** | кнопка «Инвентарь» / ▣ |
-| Использовать эликсир | R | кнопка «Зелье» |
-| Пауза | Esc / P | Ⅱ |
-| Полный экран | ⛶ | ⛶ |
-
-Шахта доступна из любого открытого мира. Нажми кнопку **«В шахту»** или **E**. Враги на поверхности дают эссенцию и ресурсы; чтобы добыть медь, начни копать первые слои вниз и ищи светящиеся жилы. После 8 меди можно сделать медную кирку.
-
-**Совет:** начни с добычи камня, меди и угля. В кузнице создай рудничный самострел и патроны, экипируй его в инвентаре и наведи курсор в шахте и кликай, либо стреляй кнопкой **J / X** или **⚔**. Потом углубляйся и собери Резонатор Бездны.
-
-## 📂 Файлы
-
-- `index.html` — главная игра, миры и боссы, взаимодействие с новым модулем.
-- `forge.js` — шахта, генерация тайлов, копание, ресурсы, инвентарь, крафт и броня.
-- `forge.css` — адаптивное окно инвентаря, кузницы, шахтные кнопки.
-- `favicon.svg` — оригинальная иконка.
-- `DESIGN.md` — заметки об арт-дирекшене.
-
-## 🚀 GitHub Pages
-
-В репозитории → **Settings → Pages → Deploy from a branch → main → /(root)**. Адрес игры: https://okun4062-cmd.github.io/game/index.html .
-
-Вся игра работает на HTML/CSS/Canvas JavaScript; устанавливать Node, Vite, библиотеки или использовать сервер не требуется.
-
-## 🧪 Проверка
-
-Синтаксис JavaScript проверен. Логика была прогнана в тестовом окружении: вход/выход из шахты, движение, добыча, повторяемая руда, крафт меча/брони/кирки, инвентарь, сражение с боссом, выпадающие награды и сохранения.
-
-Проверка работы в реальном браузере на конкретном устройстве необходима отдельно. После обновления сайта может потребоваться обновить вкладку или очистить кеш старой версии.
+GitHub Pages serves the repository root as a static site.
