@@ -7,15 +7,17 @@
 window.NocturneForge = function(e){
   const TS=16,MAX_DEPTH=172,MAX_REMOVED=12000;
   const names={stone:'Камень',wood:'Древесина',copper:'Медная руда',iron:'Железная руда',coal:'Уголь',
-    gold:'Золото',crystal:'Кристаллы',void:'Тёмная руда',essence:'Эссенция',tonic:'Эликсиры'};
+    gold:'Золото',crystal:'Кристаллы',void:'Тёмная руда',essence:'Эссенция',tonic:'Эликсиры',ammo:'Патроны'};
   const icons={stone:'🪨',wood:'🪵',copper:'🟠',iron:'⚙',coal:'◼',gold:'🟡',crystal:'💎',
-    void:'🔮',essence:'✨',tonic:'🧪'};
-  const materials=['stone','wood','copper','iron','coal','gold','crystal','void','essence','tonic'];
+    void:'🔮',essence:'✨',tonic:'🧪',ammo:'🟡'};
+  const materials=['stone','wood','copper','iron','coal','gold','crystal','void','essence','tonic','ammo'];
   const recipes=[
     {id:'copperSword',name:'Медный меч',icon:'🗡️',slot:'weapon',stat:5,cost:{copper:9,wood:5}},
     {id:'ironSword',name:'Железный клеймор',icon:'⚔️',slot:'weapon',stat:9,cost:{iron:14,copper:7,wood:4}},
     {id:'crystalSword',name:'Кристальный клинок',icon:'💠',slot:'weapon',stat:15,cost:{crystal:12,iron:16,gold:7}},
     {id:'voidSword',name:'Меч Бездны',icon:'🌌',slot:'weapon',stat:23,cost:{void:16,crystal:20,gold:12}},
+    {id:'copperRepeater',name:'Рудничный самострел',icon:'🔫',slot:'weapon',stat:8,cost:{copper:18,wood:12,iron:4}},
+    {id:'voidRepeater',name:'Резонатор Бездны',icon:'🛰️',slot:'weapon',stat:18,cost:{void:10,crystal:12,iron:16}},
     {id:'stoneArmor',name:'Каменная броня',icon:'🛡',slot:'armor',stat:1,cost:{stone:18,wood:8}},
     {id:'copperArmor',name:'Медная кираса',icon:'🥉',slot:'armor',stat:2,cost:{copper:13,stone:12}},
     {id:'ironArmor',name:'Железная броня',icon:'🦾',slot:'armor',stat:4,cost:{iron:22,copper:8,coal:6}},
@@ -25,7 +27,8 @@ window.NocturneForge = function(e){
     {id:'ironPick',name:'Железная кирка',icon:'⚒️',slot:'pick',stat:3,cost:{iron:12,copper:7,coal:5}},
     {id:'crystalPick',name:'Кристальная кирка',icon:'🔨',slot:'pick',stat:4,cost:{crystal:10,iron:10,gold:5}},
     {id:'voidPick',name:'Кирка Бездны',icon:'🔱',slot:'pick',stat:5,cost:{void:15,crystal:14,gold:8}},
-    {id:'tonic',name:'Целебный эликсир',icon:'🧪',slot:'consumable',stat:4,cost:{essence:7,crystal:2,coal:2}}
+    {id:'tonic',name:'Целебный эликсир',icon:'🧪',slot:'consumable',stat:4,cost:{essence:7,crystal:2,coal:2}},
+    {id:'ammo',name:'Патроны · 12 шт.',icon:'🟡',slot:'consumable',item:'ammo',amount:12,stat:12,cost:{copper:5,coal:3}}
   ];
   const oreDef={
     dirt: {color:'#584b4a',top:'#70605d',weight:1,hard:1,drop:'stone',req:1},
@@ -39,6 +42,7 @@ window.NocturneForge = function(e){
     bedrock:{color:'#20212d',top:'#4d4755',weight:9,hard:999,drop:null,req:99}
   };
   let bag={},owned=new Set(),gear={},miningXP=0,stats={mobs:0,blocks:0,bosses:0};
+  let mineShots=[];
   let inMine=false,inventoryOpen=false,activeTab='recipes',surface=null,mineZone=0;
   let mineCameraY=0,mineCameraX=0,removed=new Set(),tileDamage=new Map(),minedCount=0;
   let mineEnemies=[],mineMobSpawnTick=0,surfaceNodeCooldown=new Map(),geodeCooldown=new Map();
@@ -56,9 +60,9 @@ window.NocturneForge = function(e){
   const shell=document.getElementById('shell');
   const portalX=z=>z*e.ZONE+128;
 
-  function defaultBag(){return {stone:0,wood:22,copper:0,iron:0,coal:0,gold:0,crystal:0,void:0,essence:0,tonic:0}}
+  function defaultBag(){return {stone:0,wood:22,copper:0,iron:0,coal:0,gold:0,crystal:0,void:0,essence:0,tonic:0,ammo:0}}
   function fresh(){
-    bag=defaultBag();owned.clear();
+    bag=defaultBag();owned.clear();mineShots=[];
     gear={weapon:'starter',armor:'cloth',pick:'hand'};
     miningXP=0;stats={mobs:0,blocks:0,bosses:0};removed=new Set();
     tileDamage.clear();surfaceNodeCooldown.clear();geodeCooldown.clear();
@@ -74,7 +78,7 @@ window.NocturneForge = function(e){
     if(!value||typeof value!=='object')return;
     const old=defaultBag();
     for(const k of materials)old[k]=Math.max(0,Math.min(999999,Number(value.bag?.[k])||0));
-    bag=old;owned=new Set((value.owned||[]).filter(id=>recipes.some(r=>r.id===id)));
+    bag=old;mineShots=[];owned=new Set((value.owned||[]).filter(id=>recipes.some(r=>r.id===id)));
     gear={weapon:'starter',armor:'cloth',pick:'hand',...(value.gear||{})};
     for(const slot of ['weapon','armor','pick']){
       if(!['starter','cloth','hand'].includes(gear[slot])&&!owned.has(gear[slot]))gear[slot]={weapon:'starter',armor:'cloth',pick:'hand'}[slot];
@@ -114,7 +118,7 @@ window.NocturneForge = function(e){
     if(r.slot!=='consumable'&&owned.has(id)){e.notif('Предмет уже создан');return}
     if(!canCraft(r)){e.notif('Не хватает ресурсов');return}
     for(const [k,n] of Object.entries(r.cost))bag[k]-=n;
-    if(r.slot==='consumable')bag.tonic++;
+    if(r.slot==='consumable')bag[r.item||'tonic']=(bag[r.item||'tonic']||0)+(r.amount||1);
     else{owned.add(id);const prev=r.slot==='weapon'?weaponDamage():r.slot==='armor'?armorValue():pickTier();
       if(r.stat>=prev)gear[r.slot]=id;
       if(r.slot==='armor'&&e.player()){
@@ -161,7 +165,7 @@ window.NocturneForge = function(e){
       '<div class="forge-recipe-grid">'+recipes.map(r=>{
        const done=owned.has(r.id),on=gear[r.slot]===r.id && r.slot!=='consumable';
        return '<article class="forge-recipe"><div class="forge-recipe-top"><div class="forge-recipe-icon">'+r.icon+'</div><div><h3>'+r.name+'</h3><small>'+
-        (r.slot==='weapon'?'Урон '+r.stat:r.slot==='armor'?'Защита '+r.stat:r.slot==='pick'?'Сила кирки '+r.stat:'Лечение +'+r.stat)+'</small></div></div>'+
+        (r.slot==='weapon'?(r.id.includes('Repeater')?'Урон выстрела '+r.stat+' · дальний бой':'Урон '+r.stat):r.slot==='armor'?'Защита '+r.stat:r.slot==='pick'?'Сила кирки '+r.stat:r.item==='ammo'?'12 выстрелов':'Лечение +'+r.stat)+'</small></div></div>'+
         '<div class="cost">'+costHtml(r.cost)+'</div><button data-craft="'+r.id+'" '+((!canCraft(r)||done)?'disabled':'')+'>'+
         (done?(on?'✓ Надето':'Уже создано'):'Создать')+'</button>'+
         (done&&!on&&r.slot!=='consumable'?'<button class="equip" data-equip="'+r.id+'">Надеть</button>':'')+'</article>';
@@ -173,8 +177,8 @@ window.NocturneForge = function(e){
       '2. A/D — движение, SPACE — двойной прыжок. Удерживай F или кнопку ⛏ для копания.<br>'+
       '3. Зажми S / ▼ и копай, чтобы рыть вниз. Чтобы копать наверх, зажми W / ↑.<br>'+
       '4. Медная руда → медная кирка → железная → кристальная → кирка Бездны.<br>'+
-      '5. В пещерах есть богатые жилы, светящиеся гроты и подземные враги.<br>'+
-      '6. Руды можно продавать только крафту — улучшай клинок и броню перед следующими боссами.<br>'+
+      '5. В пещерах есть богатые жилы, светящиеся гроты и подземные враги. Создай самострел в кузнице и стреляй кнопкой ⚔ / J.<br>'+
+      '6. Создай рудничный самострел и патроны, чтобы стрелять по существам вдаль. <b>J / X</b> или ⚔ — выстрел.<br>'+
       '7. Боссы получают больше здоровья и урона после каждого мира.<br>'+
       '8. R — выпить эликсир, I — открыть/закрыть сумку. Прогресс шахты сохраняется.<br><br>'+
       'Урон от босса (до брони): '+(1+Math.floor(e.defeated()/2))+' · Защита: '+armorValue()+
@@ -279,6 +283,7 @@ window.NocturneForge = function(e){
     return false;
   }
   function transitionMine(){
+    mineShots=[];
     if(inventoryOpen)close();
     if(e.mode()==='menu'||e.mode()==='dead'){e.start();if(e.mode()!=='play')return}
     if(e.mode()!=='play'){e.notif('Сначала продолжи путь');return}
@@ -300,12 +305,12 @@ window.NocturneForge = function(e){
     const p=e.player();
     if(surface){p.x=surface.x;p.y=surface.y;e.setCamera(surface.cam)}
     p.vx=0;p.vy=0;p.inv=60;p.ground=true;p.jumps=0;
-    mineEnemies=[];tileDamage.clear();mineSparks=[];surface=null;portalHint.hidden=true;
+    mineEnemies=[];tileDamage.clear();mineSparks=[];mineShots=[];surface=null;portalHint.hidden=true;
     if(!silent)e.notif('✓ Возвращение на поверхность');
     updateLabels();e.save();
   }
   function beforeReset(freshRun){
-    if(inMine){inMine=false;surface=null;mineEnemies=[];tileDamage.clear();shell.classList.remove('in-mine')}
+    if(inMine){inMine=false;surface=null;mineEnemies=[];tileDamage.clear();mineShots=[];shell.classList.remove('in-mine')}
     if(freshRun)fresh();
   }
   function beforeDeath(){
@@ -414,6 +419,16 @@ window.NocturneForge = function(e){
     }
     if(mineSparks.length>130)mineSparks.splice(0,mineSparks.length-130);
   }
+  function fireGun(p){
+    if((bag.ammo||0)<1){if(e.tick()%40<12)e.notif('Нет патронов · создай их в кузнице');return}
+    bag.ammo--;p.attack=7;p.attackCd=17;
+    const muzzleX=p.x+(p.face>0?p.w+4:-9),muzzleY=p.y+9;
+    mineShots.push({x:muzzleX,y:muzzleY,vx:p.face*8.8,life:55,damage:Math.max(2,Math.ceil(weaponDamage()/3)),color:gear.weapon==='voidRepeater'?'#d88cff':'#ffd27c'});
+    sparkAt(muzzleX,muzzleY,6,gear.weapon==='voidRepeater'?'#d88cff':'#ffd27c');
+    e.sfx(gear.weapon==='voidRepeater'?780:460,.09,'sawtooth',.035);
+    if(inventoryOpen)renderTab();
+    e.save();
+  }
   function updateMine(){
     const p=e.player();
     if(digCd>0)digCd--;
@@ -429,12 +444,14 @@ window.NocturneForge = function(e){
     p.vy=Math.min(6.7,p.vy+.31);
     if(p.attackCd>0)p.attackCd--;
     if(e.pressed.attack&&p.attackCd<=0){
+      if(gear.weapon==='copperRepeater'||gear.weapon==='voidRepeater'){fireGun(p)}else{
       p.attack=10;p.attackCd=20;
       e.sfx(430,.07);for(const bat of mineEnemies){
         if(bat.hp>0&&Math.abs(bat.x-p.x)<32&&Math.abs(bat.y-p.y)<32){
           bat.hp-=Math.max(1,Math.ceil(weaponDamage()/3));
           sparkAt(bat.x,bat.y,14,'#d59bec');if(bat.hp<=0){add('essence',2);add('coal',1,true)}
         }
+      }
       }
     }
     if(p.attack>0)p.attack--;
@@ -477,6 +494,18 @@ window.NocturneForge = function(e){
         e.damage(amount,bat.x);
       }
     }
+    for(let i=mineShots.length-1;i>=0;i--){
+      const shot=mineShots[i];shot.x+=shot.vx;shot.life--;
+      let hit=false;
+      for(const bat of mineEnemies){
+        if(bat.hp>0&&Math.abs(shot.x-bat.x)<13&&Math.abs(shot.y-bat.y)<16){
+          bat.hp-=shot.damage;sparkAt(bat.x,bat.y,10,shot.color);hit=true;
+          if(bat.hp<=0){stats.mobs++;add('essence',2);add('coal',1,true);e.save()}
+          break;
+        }
+      }
+      if(hit||shot.life<=0||shot.x<0||shot.x>p.x+520||shot.x<p.x-520)mineShots.splice(i,1);
+    }
     if(mineEnemies.length>22)mineEnemies=mineEnemies.filter(b=>b.hp>0&&Math.abs(b.x-p.x)<450);
     for(let i=mineSparks.length-1;i>=0;i--){
       const q=mineSparks[i];q.x+=q.vx;q.y+=q.vy;q.vy+=.08;q.life--;
@@ -509,7 +538,13 @@ window.NocturneForge = function(e){
       }
       const d=oreDef[type];
       ctx.fillStyle=d.color;ctx.fillRect(x,y,16,16);
+      // Faceted pixel strata and hairline fractures keep the rock readable at native scale.
       ctx.fillStyle=d.top;ctx.fillRect(x+1,y+1,14,2);
+      const facet=hash(c,r,12),crack=hash(c,r,19);
+      ctx.fillStyle=type==='bedrock'?'#ffffff0c':'#ffffff0b';
+      ctx.fillRect(x+2+Math.floor(facet*5),y+5,5,1);ctx.fillRect(x+7,y+6,1,3);
+      ctx.fillStyle='#0506102e';ctx.fillRect(x+3,y+12,4,1);ctx.fillRect(x+9,y+10,2,1);
+      if(crack>.78){ctx.fillStyle='#07091455';ctx.fillRect(x+10,y+4,1,3);ctx.fillRect(x+8,y+7,2,1);ctx.fillRect(x+7,y+8,1,2)}
       ctx.fillStyle='#090a17a0';ctx.fillRect(x+14,y+2,2,14);
       ctx.fillStyle='#dcd6e012';ctx.fillRect(x+4,y+6,6,1);
       if(type!=='stone'&&type!=='dirt'&&type!=='bedrock'){
@@ -553,6 +588,20 @@ window.NocturneForge = function(e){
         ctx.fillStyle=ore.top+'66';ctx.fillRect(xx-5,yy-4,9,6);
       }
     }
+    // Timber shoring: hand-built crossbeams break up long tunnels and catch warm lantern light.
+    const beamColStart=Math.max(0,Math.floor(c0/12)-1),beamColEnd=Math.floor(c1/12)+1;
+    for(let col=beamColStart;col<=beamColEnd;col++){
+      const c=col*12+6, row=22+(col%4)*13;
+      const x=c*TS-mineCameraX,y=row*TS-mineCameraY;
+      if(x<-40||x>W+40||y<-30||y>H+30||tileAt(c,row)||tileAt(c,row+1))continue;
+      const lantern=ctx.createRadialGradient(x,y+12,2,x,y+12,54);
+      lantern.addColorStop(0,'#ffbd6530');lantern.addColorStop(1,'#ffbd6500');
+      ctx.fillStyle=lantern;ctx.fillRect(x-54,y-42,108,108);
+      ctx.fillStyle='#39291f';ctx.fillRect(x-24,y,4,34);ctx.fillRect(x+20,y,4,34);
+      ctx.fillStyle='#916344';ctx.fillRect(x-25,y,3,31);ctx.fillRect(x+21,y,3,31);
+      ctx.fillStyle='#68472f';ctx.fillRect(x-25,y,50,4);ctx.fillStyle='#c08a56';ctx.fillRect(x-23,y+1,46,1);
+      ctx.fillStyle='#d7a35d';ctx.fillRect(x-2,y-8,4,5);ctx.fillStyle='#ffdb91';ctx.fillRect(x-1,y-7,2,3);
+    }
     // Huge glowing chambers at regular depth intervals.
     for(let i=0;i<9;i++){
       const c=28+i*49,y=18+(i%4)*24;
@@ -581,10 +630,23 @@ window.NocturneForge = function(e){
       ctx.fillStyle='#d0a5ff';ctx.fillRect(x-3,y+3,2,2);ctx.fillRect(x+3,y+3,2,2);
       for(let j=0;j<2;j++){ctx.fillStyle='#c1a1e05c';ctx.fillRect(x+(j?12:-12),y+Math.sin(e.tick()*.19+j)*4,7,2)}
     }
+    // Torch falloff: the chamber edges sink into shadow while the miner carries a warm pool of light.
+    const lx=p.x+p.w/2-mineCameraX,ly=p.y+p.h/2-mineCameraY;
+    const shadow=ctx.createRadialGradient(lx,ly,12,lx,ly,Math.max(W,H)*.72);
+    shadow.addColorStop(0,'#08071308');shadow.addColorStop(.42,'#05071122');shadow.addColorStop(1,'#03040c9c');
+    ctx.fillStyle=shadow;ctx.fillRect(0,0,W,H);
+    const torch=ctx.createRadialGradient(lx,ly,2,lx,ly,62);
+    torch.addColorStop(0,'#ffd99032');torch.addColorStop(.28,'#ffbd6018');torch.addColorStop(1,'#ffb84a00');
+    ctx.fillStyle=torch;ctx.fillRect(lx-62,ly-62,124,124);
     ctx.save();
     ctx.translate(0,-mineCameraY);
     e.drawPlayer();
     ctx.restore();
+    for(const shot of mineShots){
+      const x=shot.x-mineCameraX,y=shot.y-mineCameraY;
+      ctx.fillStyle=shot.color+'55';ctx.fillRect(x-4,y-2,13,5);
+      ctx.fillStyle='#fff2c9';ctx.fillRect(x,y-1,7,2);
+    }
     for(const q of mineSparks){
       ctx.globalAlpha=Math.min(1,q.life/12);
       ctx.fillStyle=q.c;ctx.fillRect(q.x-mineCameraX,q.y-mineCameraY,2,2);
@@ -605,6 +667,10 @@ window.NocturneForge = function(e){
     ctx.fillStyle='#f8e2b4';ctx.font='bold 9px monospace';ctx.textBaseline='top';
     ctx.fillText('⛏  ГЛУБИНА: '+Math.max(0,Math.floor(p.y/TS)-9),14,14);
     ctx.fillText('⚒  КИРКА: '+pickTier()+'  ·  БЛОКОВ: '+stats.blocks,14,27);
+    if(gear.weapon==='copperRepeater'||gear.weapon==='voidRepeater'){
+      ctx.fillStyle='#11101dce';ctx.fillRect(W-103,8,96,32);ctx.fillStyle=gear.weapon==='voidRepeater'?'#e4b1ff':'#ffe1a1';
+      ctx.fillText('🔫  '+(bag.ammo||0)+' ПАТР.',W-96,14);ctx.fillText('КЛИК / J СТРЕЛЯТЬ',W-96,27);
+    }
     const currentGrotto=nearbyGrotto(p.x+p.w/2,p.y+p.h*.6);
     if(currentGrotto){ctx.fillStyle='#141321bd';ctx.fillRect(126,44,230,20);ctx.fillStyle='#ffe9b7';ctx.fillText('✦ ЖИЛА: '+names[currentGrotto.g.ore]+' · F / ⛏',132,50)}
     ctx.fillStyle='#0c0c19b5';ctx.fillRect(105,H-30,270,23);
