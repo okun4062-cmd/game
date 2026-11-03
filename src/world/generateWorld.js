@@ -68,7 +68,9 @@ export function generateWorld(seed = 'nocturne', options = {}) {
   for (let n = 0; n < Math.floor(width / 15); n++) {
     const cx = 8 + Math.floor(random() * (width - 16));
     const baseY = tunnelY + Math.floor(random() * Math.max(1, height - tunnelY - 9));
+    for (let yy = tunnelY; yy <= baseY; yy++) { const bend = cx + Math.round(Math.sin(yy / 9 + n) * 2); chamber(bend, yy, 1, 1); }
     chamber(cx, baseY, 3 + Math.floor(random() * 6), 2 + Math.floor(random() * 4));
+    if(n%4===0)for(let dx=-3;dx<=3;dx++){const wx=cx+dx,wy=baseY+2;if(wx>=0&&wx<width&&wy<height&&tiles[wy*width+wx]===TileId.AIR)tiles[wy*width+wx]=TileId.WATER;}
     for (let j = 0; j < 3; j++) {
       const ox = cx + Math.floor(random() * 13) - 6, oy = baseY + Math.floor(random() * 9) - 4;
       if (ox >= 0 && ox < width && oy >= 0 && oy < height && tiles[oy * width + ox] === TileId.STONE) tiles[oy * width + ox] = random() < 0.25 ? TileId.CRYSTAL : TileId.ORE;
@@ -77,3 +79,8 @@ export function generateWorld(seed = 'nocturne', options = {}) {
 
   return { seed: String(seed), width, height, tiles, surfaceHeights, biomes, dungeons };
 }
+
+
+
+
+
