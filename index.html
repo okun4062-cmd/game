@@ -125,7 +125,7 @@ footer{margin-top:25px;border-top:0;letter-spacing:.1em;color:#9992a9}
 <body>
 <main>
  <header class="head">
-  <div class="brand-stack"><div class="brand-sigil" aria-hidden="true"></div><div><div class="mark">N<span style="color:#f0d9a6">Ø</span>CTURNE <em>Ⅱ</em></div><div class="sup">THE FORGE & THE DEEP · INFINITE REALMS</div></div></div>
+  <div class="brand-stack"><div class="brand-sigil" aria-hidden="true"></div><div><div class="mark">N<span style="color:#f0d9a6">Ø</span>CTURNE <em>Ⅲ</em></div><div class="sup">THE FORGE & THE DEEP · INFINITE REALMS</div></div></div>
   <div class="head-side"><div class="top-right-note">ШАХТЫ · БРОНЯ · КРАФТ</div><button class="chip" id="soundBtn" aria-label="Звук">♫ ЗВУК: ВЫКЛ</button><button class="chip" id="fullBtn">⛶ ПОЛНЫЙ ЭКРАН</button></div>
  </header>
  <nav class="forge-tools" aria-label="Снаряжение, шахта и крафт">
@@ -166,11 +166,11 @@ footer{margin-top:25px;border-top:0;letter-spacing:.1em;color:#9992a9}
   </section>
  <div class="info"><span><strong id="zoneLabel">I · ЗАБЫТЫЕ ВРАТА</strong> — следуй за светом, открой легенды</span><span class="progress-wrap">ПУТЬ <span id="metaProgress"><span id="metaFill"></span></span></span><span class="kbd">A/D · SPACE · J · SHIFT · ESC</span><span id="record">РЕКОРД: 0</span></div>
  <div class="features">
-  <article class="feature"><div class="number">01 / МИРЫ</div><h3>Дальше, чем горизонт</h3><p>12 разных атмосфeр, гигантские локации и бесконечное странствие.</p></article>
-  <article class="feature"><div class="number">02 / ТАЙНЫ</div><h3>Загадки и секреты</h3><p>Скрытые алтари, кристаллы, мини-боссы и редкие награды.</p></article>
-  <article class="feature"><div class="number">03 / СРАЖЕНИЯ</div><h3>Тени древних стражей</h3><p>Огромные боссы, новые паттерны, рывок и меткие удары.</p></article>
+  <article class="feature"><div class="number">01 / ГЛУБИНА</div><h3>Шахта без конца</h3><p>172 подземных слоя, бескрайние туннели, рудные жилы и гроты для добычи ресурсов.</p></article>
+  <article class="feature"><div class="number">02 / КУЗНИЦА</div><h3>Собери свой арсенал</h3><p>Крафти кирки, мечи, броню и целебные эликсиры. Сохраняй экипировку.</p></article>
+  <article class="feature"><div class="number">03 / ВЫЗОВ</div><h3>Каждый босс сильнее</h3><p>С ростом мира увеличивается здоровье и урон боссов. Броня и оружие решают исход.</p></article>
  </div>
- <footer><span>© NOCTURNE / ECLIPSE EDITION</span><span>СОЗДАНО ДЛЯ БРАУЗЕРА · УПРАВЛЕНИЕ НА ТЕЛЕФОНЕ · БЕЗ УСТАНОВКИ</span></footer>
+ <footer><span>© NOCTURNE / THE FORGE &amp; THE DEEP</span><span>СОЗДАНО ДЛЯ БРАУЗЕРА · УПРАВЛЕНИЕ НА ТЕЛЕФОНЕ · БЕЗ УСТАНОВКИ</span></footer>
 </main>
 <script src="./forge.js"></script>
 <script>
@@ -1053,6 +1053,7 @@ function bind(k,v){if(!(k in key))return;if(v&&!key[k]&&k in press)press[k]=1;ke
 const keys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',KeyW:'jump',Space:'jump',KeyZ:'jump',KeyJ:'attack',KeyX:'attack',KeyK:'attack',ShiftLeft:'dash',ShiftRight:'dash',KeyC:'dash',KeyF:'dig',KeyS:'down',ArrowDown:'down'};
 window.addEventListener('keydown',e=>{
  if(forge?.inventoryOpen){if(forge.onHotkey(e.code)){e.preventDefault();return}e.preventDefault();return}
+ if(e.repeat&&['KeyE','KeyI','Tab','KeyR'].includes(e.code)){e.preventDefault();return}
  if(forge?.onHotkey(e.code)){e.preventDefault();return}
  if(e.code==='Escape'||e.code==='KeyP'){if(state==='play')pause();else if(state==='pause')start();e.preventDefault();return}
  if(e.code==='Enter'&&state!=='play'){start();e.preventDefault();return}
